@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION VERSION 3.16.0)
 
-project ("CrazyTankGameProject" C CXX)
+project ("WebViewProject" C CXX)
 
 set_property (GLOBAL PROPERTY USE_FOLDERS ON)
 
@@ -114,7 +114,6 @@ link_libraries(glm)
 link_libraries(Vulkan::Vulkan)
 link_libraries(SDL2-static)
 link_libraries(LibConfig)
-link_libraries(SDL2_mixer)
 link_libraries(litehtml)
 
 ### Bedrock ##############################################
@@ -129,34 +128,38 @@ add_subdirectory("${CMAKE_SOURCE_DIR}/engine/entity_system")
 include_directories("${CMAKE_SOURCE_DIR}/engine/entity_system")
 link_libraries(EntitySystem)
 
-### Asset system #########################################
+### Asset system ############################################
 
 add_subdirectory("${CMAKE_SOURCE_DIR}/engine/asset_system")
 include_directories("${CMAKE_SOURCE_DIR}/engine/asset_system")
 link_libraries(AssetSystem)
 
-### Importer #############################################
+### Importer ################################################
 
 add_subdirectory("${CMAKE_SOURCE_DIR}/engine/importer")
 include_directories("${CMAKE_SOURCE_DIR}/engine/importer")
 link_libraries(Importer)
 
-### TimeSystem ############################################
+### TimeSystem ##############################################
 
 add_subdirectory("${CMAKE_SOURCE_DIR}/engine/time_system")
 include_directories("${CMAKE_SOURCE_DIR}/engine/time_system")
 link_libraries(TimeSystem)
 
-### JobSystem ############################################
+### JobSystem ###############################################
 
 add_subdirectory("${CMAKE_SOURCE_DIR}/engine/job_system")
 include_directories("${CMAKE_SOURCE_DIR}/engine/job_system")
 link_libraries(JobSystem)
 
-### Renderer #############################################
+### Renderer ################################################
 
 add_subdirectory("${CMAKE_SOURCE_DIR}/engine/render_system")
 include_directories("${CMAKE_SOURCE_DIR}/engine/render_system")
 link_libraries(RenderSystem)
+
+### Executables #############################################
+
+add_subdirectory("${CMAKE_SOURCE_DIR}/executables/web_view")
 
 #############################################################
