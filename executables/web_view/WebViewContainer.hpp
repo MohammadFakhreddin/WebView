@@ -17,6 +17,12 @@ public:
 
 	~WebViewContainer() override;
 
+	void Update();
+
+	void UpdateBuffers(const MFA::RT::CommandRecordState& recordState);
+
+	void DisplayPass(MFA::RT::CommandRecordState& recordState);
+	
 protected:
 
 	litehtml::element::ptr create_element(
@@ -130,6 +136,8 @@ protected:
 private:
 
 	std::shared_ptr<FontRenderer> _fontRenderer = nullptr;
+
+	litehtml::document::ptr _html = nullptr;
 
 	std::unordered_map<litehtml::uint_ptr, std::unique_ptr<FontRenderer::TextData>> _textDataMap{};
 	

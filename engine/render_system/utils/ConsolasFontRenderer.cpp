@@ -49,7 +49,6 @@ namespace MFA
 
     //------------------------------------------------------------------
 
-    // TODO: Add support for color
     bool ConsolasFontRenderer::AddText(
         TextData & inOutData,
         std::string_view const & text, 
@@ -74,12 +73,7 @@ namespace MFA
         y = (y / fbH * 2.0f) - 1.0f;
 
         // Calculate text width
-        float textWidth = 0;
-        for (auto letter : text)
-        {
-            stb_fontchar *charData = &_stbFontData[(uint32_t)letter - firstChar];
-            textWidth += charData->advance * charW;
-        }
+        float textWidth = TextWidth(text, params);
 
         switch (params.textAlign)
         {
@@ -113,39 +107,43 @@ namespace MFA
                 continue;
             }
 
-            stb_fontchar *charData = &_stbFontData[(uint32_t)letter - firstChar];
+            int letterIdx = static_cast<uint32_t>(letter) - firstChar;
+            if (letterIdx >= 0 && letterIdx < STB_FONT_consolas_24_latin1_NUM_CHARS)
+            {
+                stb_fontchar* charData = &_stbFontData[letterIdx];
 
-            mapped->position.x = (x + (float)charData->x0 * charW);
-            mapped->position.y = (y + (float)charData->y0 * charH);
-            mapped->uv.x = charData->s0;
-            mapped->uv.y = charData->t0;
-            mapped->color = params.color;
-            mapped++;
+                mapped->position.x = (x + (float)charData->x0 * charW);
+                mapped->position.y = (y + (float)charData->y0 * charH);
+                mapped->uv.x = charData->s0;
+                mapped->uv.y = charData->t0;
+                mapped->color = params.color;
+                mapped++;
 
-            mapped->position.x = (x + (float)charData->x1 * charW);
-            mapped->position.y = (y + (float)charData->y0 * charH);
-            mapped->uv.x = charData->s1;
-            mapped->uv.y = charData->t0;
-            mapped->color = params.color;
-            mapped++;
+                mapped->position.x = (x + (float)charData->x1 * charW);
+                mapped->position.y = (y + (float)charData->y0 * charH);
+                mapped->uv.x = charData->s1;
+                mapped->uv.y = charData->t0;
+                mapped->color = params.color;
+                mapped++;
 
-            mapped->position.x = (x + (float)charData->x0 * charW);
-            mapped->position.y = (y + (float)charData->y1 * charH);
-            mapped->uv.x = charData->s0;
-            mapped->uv.y = charData->t1;
-            mapped->color = params.color;
-            mapped++;
+                mapped->position.x = (x + (float)charData->x0 * charW);
+                mapped->position.y = (y + (float)charData->y1 * charH);
+                mapped->uv.x = charData->s0;
+                mapped->uv.y = charData->t1;
+                mapped->color = params.color;
+                mapped++;
 
-            mapped->position.x = (x + (float)charData->x1 * charW);
-            mapped->position.y = (y + (float)charData->y1 * charH);
-            mapped->uv.x = charData->s1;
-            mapped->uv.y = charData->t1;
-            mapped->color = params.color;
-            mapped++;
+                mapped->position.x = (x + (float)charData->x1 * charW);
+                mapped->position.y = (y + (float)charData->y1 * charH);
+                mapped->uv.x = charData->s1;
+                mapped->uv.y = charData->t1;
+                mapped->color = params.color;
+                mapped++;
 
-            x += charData->advance * charW;
+                x += charData->advance * charW;
 
-            letterRange++;
+                letterRange++;
+            }
         }
 
         inOutData.letterRange.emplace_back(letterRange);
@@ -196,8 +194,12 @@ namespace MFA
         float textWidth = 0;
         for (auto letter : text)
         {
-            stb_fontchar* charData = &_stbFontData[static_cast<uint32_t>(letter) - firstChar];
-            textWidth += charData->advance * charW;
+            int idx = static_cast<uint32_t>(letter) - firstChar;
+            if (idx >= 0 && idx < STB_FONT_consolas_24_latin1_NUM_CHARS)
+            {
+                stb_fontchar* charData = &_stbFontData[static_cast<uint32_t>(letter) - firstChar];
+                textWidth += charData->advance * charW;
+            }
         }
 
         return charW;

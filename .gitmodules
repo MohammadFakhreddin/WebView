@@ -13,4 +13,4 @@
 [submodule "submodules/litehtml"]
 	path = submodules/litehtml
 	url = https://github.com/litehtml/litehtml.git
-	branch = v0.9
+	branch = master

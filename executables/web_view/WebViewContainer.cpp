@@ -1,7 +1,13 @@
 #include "WebViewContainer.hpp"
 
+#include <ranges>
+
+#include "BedrockFile.hpp"
 #include "BedrockPath.hpp"
+#include "ImportGLTF.hpp"
 #include "LogicalDevice.hpp"
+#include "litehtml/el_body.h"
+#include "litehtml/el_text.h"
 
 //=========================================================================================
 
@@ -9,21 +15,67 @@ WebViewContainer::WebViewContainer(std::shared_ptr<FontRenderer> fontRenderer)
 	: litehtml::document_container()
 	, _fontRenderer(std::move(fontRenderer))
 {
-	//BPath htmlPath(localFilePath);
-	//BPath dirPath;
-	//htmlPath.GetParent(&dirPath);
-	//std::cout << "parent path: " << dirPath.Path() << std::endl;
 	auto * path = MFA::Path::Instance;
 	auto htmlPath = path->Get("web_view/Test.html");
 	set_base_url(htmlPath.c_str());
-	//std::cout << "    base url now:" << m_base_url << std::endl;
+	auto const blob = MFA::File::Read(htmlPath);
+	char const * htmlText = blob->As<char const>();
+	_html = litehtml::document::createFromString(
+		htmlText, 
+		this
+	);
+	MFA_ASSERT(_html != nullptr);
 
-	RenderHTML(html);
+	auto* device = MFA::LogicalDevice::Instance;
+
+	litehtml::position clip{};
+	clip.width = device->GetWindowWidth();
+	clip.height = device->GetWindowHeight();
+	clip.x = 0;
+	clip.y = 0;
+
+	_html->render(clip.width);
+
+	_html->draw(0, 0, 0, &clip);
 }
 
 //=========================================================================================
 
 WebViewContainer::~WebViewContainer() = default;
+
+//=========================================================================================
+
+void WebViewContainer::Update()
+{
+	
+	//_html->render(device->GetWindowWidth());
+	/*litehtml::position clip{};
+	clip.width = device->GetWindowWidth();
+	clip.height = device->GetWindowHeight();
+	clip.x = 0;
+	clip.y = 0;
+	_html->draw(0, 0, 0, &clip);*/
+}
+
+//=========================================================================================
+
+void WebViewContainer::UpdateBuffers(const MFA::RT::CommandRecordState& recordState)
+{
+	for (auto& textData : _textDataMap | std::views::values)
+	{
+		textData->vertexData->Update(recordState);
+	}
+}
+
+//=========================================================================================
+
+void WebViewContainer::DisplayPass(MFA::RT::CommandRecordState& recordState)
+{
+	for (auto& textData : _textDataMap | std::views::values)
+	{
+		_fontRenderer->Draw(recordState, *textData);
+	}
+}
 
 //=========================================================================================
 
@@ -33,8 +85,24 @@ litehtml::element::ptr WebViewContainer::create_element(
 	const std::shared_ptr<litehtml::document>& doc
 )
 {
-	MFA_ASSERT(false);
 	return nullptr;
+	/*if (strcmp(tag_name, "html") == 0)
+	{
+		return std::make_shared<litehtml::html_tag>(doc);
+	}
+	else if (strcmp(tag_name, "body") == 0)
+	{
+		return std::make_shared<litehtml::el_body>(doc);
+	}
+	else if (strcmp(tag_name, "text") == 0)
+	{
+		return std::make_shared<litehtml::el_text>(attributes.begin()->second.c_str(), doc);
+	}*/
+	//return litehtml::document_container::create_element(tag_name, attributes, doc);
+	/*MFA_ASSERT(false);
+	return nullptr;*/
+	//litehtml::html_tag
+	//return std::make_shared<litehtml::element>(doc);
 }
 
 //=========================================================================================
@@ -49,7 +117,7 @@ litehtml::uint_ptr WebViewContainer::create_font(
 )
 {
 	// TODO, save some information about font size
-	return 0;
+	return 1;
 }
 
 //=========================================================================================
@@ -250,6 +318,7 @@ void WebViewContainer::on_mouse_event(const litehtml::element::ptr& el, litehtml
 
 int WebViewContainer::pt_to_px(int pt) const
 {
+	return 1;// TODO
 }
 
 //=========================================================================================
@@ -281,13 +350,14 @@ void WebViewContainer::set_cursor(const char* cursor)
 int WebViewContainer::text_width(const char* text, litehtml::uint_ptr hFont)
 {
 	// TODO: Use hFont information
-	return _fontRenderer->TextWidth(text, FontRenderer::TextParams {});
+	return _fontRenderer->TextWidth(std::string_view{text, strlen(text)}, FontRenderer::TextParams{});
 }
 
 //=========================================================================================
 
 void WebViewContainer::transform_text(litehtml::string& text, litehtml::text_transform tt)
 {
+	
 }
 
 //=========================================================================================

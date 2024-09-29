@@ -8,6 +8,7 @@
 #include "render_resource/SwapChainRenderResource.hpp"
 #include "utils/ConsolasFontRenderer.hpp"
 #include "Time.hpp"
+#include "WebViewContainer.hpp"
 
 class WebViewApp
 {
@@ -23,6 +24,8 @@ private:
 
 	void Resize();
 
-	std::shared_ptr<MFA::DisplayRenderPass> displayRenderPass;
+	std::shared_ptr<MFA::DisplayRenderPass> _displayRenderPass;
+	std::shared_ptr<MFA::ConsolasFontRenderer> _fontRenderer;
+	std::unique_ptr<WebViewContainer> _webViewContainer;
 
 };

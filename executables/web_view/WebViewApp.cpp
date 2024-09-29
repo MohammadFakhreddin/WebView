@@ -1,6 +1,7 @@
 #include "WebViewApp.hpp"
 
 #include "LogicalDevice.hpp"
+#include "WebViewContainer.hpp"
 
 using namespace MFA;
 
@@ -18,7 +19,7 @@ void WebViewApp::Run()
     auto const swapChainResource = std::make_shared<SwapChainRenderResource>();
     auto const depthResource = std::make_shared<DepthRenderResource>();
     auto const msaaResource = std::make_shared<MSSAA_RenderResource>();
-    displayRenderPass = std::make_shared<DisplayRenderPass>(
+    _displayRenderPass = std::make_shared<DisplayRenderPass>(
         swapChainResource,
         depthResource,
         msaaResource
@@ -47,9 +48,9 @@ void WebViewApp::Run()
     );
     MFA_ASSERT(fontSampler != nullptr);
 
-    //auto const pipeline = std::make_shared<TextOverlayPipeline>(displayRenderPass, fontSampler);
-    //auto const fontRenderer = std::make_unique<ConsolasFontRenderer>(pipeline);
-    //auto const textData = fontRenderer->AllocateTextData();
+    auto const pipeline = std::make_shared<TextOverlayPipeline>(_displayRenderPass, fontSampler);
+    _fontRenderer = std::make_shared<ConsolasFontRenderer>(pipeline);
+    _webViewContainer = std::make_unique<WebViewContainer>(_fontRenderer);
 
     SDL_GL_SetSwapInterval(0);
     SDL_Event e;
@@ -71,7 +72,8 @@ void WebViewApp::Run()
         }
 
         device->Update();
-        Update(Time::DeltaTimeSec());
+
+    	Update(Time::DeltaTimeSec());
 
         auto recordState = device->AcquireRecordState(swapChainResource->GetSwapChainImages().swapChain);
         if (recordState.isValid == true)
@@ -93,7 +95,7 @@ void WebViewApp::Run()
 
 void WebViewApp::Update(float deltaTime)
 {
-	
+    _webViewContainer->Update();
 }
 
 //=============================================================
@@ -112,9 +114,12 @@ void WebViewApp::Render(MFA::RT::CommandRecordState & recordState)
         RT::CommandBufferType::Graphic
     );
 
-    displayRenderPass->Begin(recordState);
+    _webViewContainer->UpdateBuffers(recordState);
 
-    displayRenderPass->End(recordState);
+    _displayRenderPass->Begin(recordState);
+    _webViewContainer->DisplayPass(recordState);
+    _displayRenderPass->End(recordState);
+
     device->EndCommandBuffer(recordState);
 }
 
