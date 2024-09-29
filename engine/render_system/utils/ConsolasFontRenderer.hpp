@@ -26,7 +26,8 @@ namespace MFA
         std::unique_ptr<TextData> AllocateTextData(int maxCharCount = 2048);
 
         enum class TextAlign {Center, Left, Right};
-        struct AddTextParams
+
+        struct TextParams
         {
             TextAlign textAlign = TextAlign::Left;
             float scale = 1.5f;
@@ -38,7 +39,7 @@ namespace MFA
             std::string_view const & text, 
             float x, 
             float y, 
-            AddTextParams params
+            TextParams params
         );
 
         void ResetText(TextData & inOutData);
@@ -47,6 +48,9 @@ namespace MFA
             RT::CommandRecordState& recordState,
             TextData & data
         ) const;
+
+        [[nodiscard]]
+        int TextWidth(std::string_view const& text, TextParams params);
 
     private:
 

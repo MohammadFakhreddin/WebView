@@ -7,6 +7,10 @@ namespace MFA
 
     //------------------------------------------------------------------
 
+    static constexpr uint32_t firstChar = STB_FONT_consolas_24_latin1_FIRST_CHAR;
+
+    //------------------------------------------------------------------
+
     ConsolasFontRenderer::ConsolasFontRenderer(std::shared_ptr<TextOverlayPipeline> pipeline)
         : _pipeline(std::move(pipeline))
     {
@@ -51,13 +55,11 @@ namespace MFA
         std::string_view const & text, 
         float x, 
         float y, 
-        AddTextParams params
+        TextParams params
     )
     {
         auto const windowWidth = static_cast<float>(LogicalDevice::Instance->GetWindowWidth());
         auto const windowHeight = static_cast<float>(LogicalDevice::Instance->GetWindowHeight());
-
-        const uint32_t firstChar = STB_FONT_consolas_24_latin1_FIRST_CHAR;
 
         int letterRange = inOutData.letterRange.empty() == false ? inOutData.letterRange.back() : 0;
         
@@ -93,6 +95,8 @@ namespace MFA
 
         bool success = true;
 
+        auto const startX = x;
+
         // Generate a uv mapped quad per char in the new text
         for (auto letter : text)
         {
@@ -100,6 +104,13 @@ namespace MFA
             {
                 success = false;
                 break;
+            }
+
+            if (letter == '\n')
+            {
+                x = startX;
+                y += charH;
+                continue;
             }
 
             stb_fontchar *charData = &_stbFontData[(uint32_t)letter - firstChar];
@@ -173,6 +184,23 @@ namespace MFA
             vkCmdDraw(recordState.commandBuffer, currentLetterRange - previousLetterRange, 1, previousLetterRange, 0);
             previousLetterRange = currentLetterRange;
         }
+    }
+
+    //------------------------------------------------------------------
+
+    int ConsolasFontRenderer::TextWidth(std::string_view const& text, TextParams params)
+    {
+        auto const windowWidth = static_cast<float>(LogicalDevice::Instance->GetWindowWidth());
+        const float charW = 1.5f * params.scale / windowWidth;
+
+        float textWidth = 0;
+        for (auto letter : text)
+        {
+            stb_fontchar* charData = &_stbFontData[static_cast<uint32_t>(letter) - firstChar];
+            textWidth += charData->advance * charW;
+        }
+
+        return charW;
     }
 
     //------------------------------------------------------------------
