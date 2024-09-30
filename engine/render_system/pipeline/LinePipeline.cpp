@@ -12,22 +12,17 @@ namespace MFA
     //-------------------------------------------------------------------------------------------------
 
     LinePipeline::LinePipeline(
-        std::shared_ptr<DisplayRenderPass> displayRenderPass,
-        std::shared_ptr<RT::BufferGroup> viewProjectionBuffer,
+        std::shared_ptr<DisplayRenderPass> displayRenderPass, 
         int const maxSets
     ) 
     {
         mDisplayRenderPass = std::move(displayRenderPass);
-
-        mViewProjBuffer = std::move(viewProjectionBuffer);
-
         mDescriptorPool = RB::CreateDescriptorPool(
             LogicalDevice::Instance->GetVkDevice(),
             maxSets
         );
         CreateDescriptorSetLayout();
         CreatePipeline();
-        CreateDescriptorSets();
     }
 
 	//-------------------------------------------------------------------------------------------------
@@ -60,7 +55,6 @@ namespace MFA
         }
 
         RB::BindPipeline(recordState, *mPipeline);
-        RB::AutoBindDescriptorSet(recordState, RB::UpdateFrequency::PerPipeline, mDescriptorSetGroup);
     }
 
     //-------------------------------------------------------------------------------------------------
@@ -184,42 +178,6 @@ namespace MFA
             pipelineLayout,
             pipelineOptions
         );
-    }
-
-    //-------------------------------------------------------------------------------------------------
-
-    void LinePipeline::CreateDescriptorSets()
-    {
-        auto const maxFramesPerFlight = LogicalDevice::Instance->GetMaxFramePerFlight();
-        mDescriptorSetGroup = RB::CreateDescriptorSet(
-            LogicalDevice::Instance->GetVkDevice(),
-            mDescriptorPool->descriptorPool,
-            mDescriptorSetLayout->descriptorSetLayout,
-            maxFramesPerFlight
-        );
-
-        for (uint32_t frameIndex = 0; frameIndex < maxFramesPerFlight; ++frameIndex)
-        {
-
-            auto const& descriptorSet = mDescriptorSetGroup.descriptorSets[frameIndex];
-            MFA_ASSERT(descriptorSet != VK_NULL_HANDLE);
-
-            DescriptorSetSchema descriptorSetSchema{ descriptorSet };
-
-            /////////////////////////////////////////////////////////////////
-            // Vertex shader
-            /////////////////////////////////////////////////////////////////
-
-            // ViewProjectionTransform
-            VkDescriptorBufferInfo bufferInfo{
-                .buffer = mViewProjBuffer->buffers[frameIndex % mViewProjBuffer->buffers.size()]->buffer,
-                .offset = 0,
-                .range = mViewProjBuffer->bufferSize,
-            };
-            descriptorSetSchema.AddUniformBuffer(&bufferInfo);
-
-            descriptorSetSchema.UpdateDescriptorSets();
-        }
     }
 
     //-------------------------------------------------------------------------------------------------

@@ -76,7 +76,7 @@ namespace MFA
 	//-------------------------------------------------------------------------------------------------
 
 	void LineRenderer::Draw(
-		MFA::RT::CommandRecordState& recordState,
+		RT::CommandRecordState& recordState,
 		glm::vec3 const& from0,
 		glm::vec3 const& to0,
 		glm::vec4 const& color

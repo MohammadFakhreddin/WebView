@@ -16,11 +16,6 @@ namespace MFA
             glm::vec3 position{};
         };
 
-        struct ViewProjection
-        {
-            glm::mat4 matrix {};
-        };
-
         struct PushConstants
         {
             glm::mat4 model;
@@ -29,7 +24,6 @@ namespace MFA
 
         explicit LinePipeline(
             std::shared_ptr<DisplayRenderPass> displayRenderPass,
-            std::shared_ptr<RT::BufferGroup> viewProjectionBuffer,
             int maxSets
         );
 
@@ -48,15 +42,10 @@ namespace MFA
 
         void CreatePipeline();
 
-        void CreateDescriptorSets();
-
         std::shared_ptr<RT::DescriptorPool> mDescriptorPool {};
         std::shared_ptr<RT::DescriptorSetLayoutGroup> mDescriptorSetLayout{};
         std::shared_ptr<RT::PipelineGroup> mPipeline{};
-        std::shared_ptr<RT::BufferGroup> mViewProjBuffer{};
-
-        RT::DescriptorSetGroup mDescriptorSetGroup{};
-
+        
         std::shared_ptr<DisplayRenderPass> mDisplayRenderPass {};
         
     };

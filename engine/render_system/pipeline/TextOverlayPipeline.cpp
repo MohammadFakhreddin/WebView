@@ -34,7 +34,7 @@ TextOverlayPipeline::~TextOverlayPipeline()
 }
 
 //-------------------------------------------------------------------------------------------------
-
+// TODO: Move to base class
 bool TextOverlayPipeline::IsBinded(RT::CommandRecordState const& recordState) const
 {
 	if (recordState.pipeline == _pipeline.get())

@@ -211,8 +211,9 @@ void WebViewContainer::draw_solid_fill(
 	const litehtml::web_color& color
 )
 {
-	int here;
+	//int here;
 
+	//layer.
 	//_drawCallsMap[hdc].emplace_back([this, layer, color](MFA::RT::CommandRecordState & recordState)->void
 	//{
 		// TODO: We need a solid color pipline to draw color

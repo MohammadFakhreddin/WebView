@@ -6,12 +6,6 @@ struct VSOut {
     float4 position : SV_POSITION;
 };
 
-struct ViewProjectionBuffer {
-    float4x4 viewProjection;
-};
-
-ConstantBuffer <ViewProjectionBuffer> vpBuffer: register(b0, space0);
-
 struct PushConsts
 {
     float4x4 model;
@@ -25,9 +19,6 @@ cbuffer {
 
 VSOut main(VSIn input) {
     VSOut output;
-
-    float4x4 mvpMatrix = mul(vpBuffer.viewProjection, pushConsts.model);
-    output.position = mul(mvpMatrix, float4(input.position, 1.0));
-    
+    output.position = mul(pushConsts.model, float4(input.position, 1.0));
     return output;
 }

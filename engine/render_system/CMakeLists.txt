@@ -4,7 +4,6 @@ set(LIBRARY_SOURCES)
 list(
     APPEND LIBRARY_SOURCES
 
-    # Bedrock
     "${CMAKE_CURRENT_SOURCE_DIR}/RenderBackend.hpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/RenderBackend.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/LogicalDevice.hpp"
@@ -32,16 +31,15 @@ list(
     "${CMAKE_CURRENT_SOURCE_DIR}/render_pass/DisplayRenderPass.hpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/render_pass/DisplayRenderPass.cpp"
 
+    "${CMAKE_CURRENT_SOURCE_DIR}/pipeline/IShadingPipeline.hpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/pipeline/LinePipeline.hpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/pipeline/LinePipeline.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/pipeline/PointPipeline.hpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/pipeline/PointPipeline.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pipeline/FlatShadingPipeline.hpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pipeline/FlatShadingPipeline.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pipeline/BlinnPhongPipeline.hpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pipeline/BlinnPhongPipeline.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/pipeline/TextOverlayPipeline.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/pipeline/TextOverlayPipeline.hpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pipeline/SolidFillPipeline.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pipeline/SolidFillPipeline.hpp"
     
     "${CMAKE_CURRENT_SOURCE_DIR}/camera/PerspectiveCamera.hpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/camera/PerspectiveCamera.cpp"
@@ -56,11 +54,6 @@ list(
     "${CMAKE_CURRENT_SOURCE_DIR}/utils/PointRenderer.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/utils/ConsolasFontRenderer.hpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/utils/ConsolasFontRenderer.cpp"
-    
-    "${CMAKE_CURRENT_SOURCE_DIR}/utils/MeshRenderer.hpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/utils/MeshRenderer.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/utils/MeshInstance.hpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/utils/MeshInstance.cpp"
 )
 
 set(LIBRARY_NAME "RenderSystem")

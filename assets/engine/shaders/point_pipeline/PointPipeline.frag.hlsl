@@ -11,7 +11,11 @@ struct PSOut {
 struct PushConsts
 {    
     float4x4 model;
-    float4 color : COLOR0;
+    float4 color;
+    float pointSize;
+    float placeholder0;
+    float placeholder1;
+    float placeholder2;
 };
 
 [[vk::push_constant]]
@@ -21,7 +25,13 @@ cbuffer {
 
 PSOut main(PSIn input) {
     PSOut output;
+
     float3 color = pushConsts.color.rgb;
+    // exposure tone mapping
+    color = ApplyExposureToneMapping(color);
+    // Gamma correct
+    color = ApplyGammaCorrection(color); 
+
     output.color = float4(color, pushConsts.color.a);
     return output;
 }
