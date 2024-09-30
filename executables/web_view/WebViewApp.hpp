@@ -25,7 +25,6 @@ private:
 	void Resize();
 
 	std::shared_ptr<MFA::DisplayRenderPass> _displayRenderPass;
-	std::shared_ptr<MFA::ConsolasFontRenderer> _fontRenderer;
 	std::unique_ptr<WebViewContainer> _webViewContainer;
 
 };

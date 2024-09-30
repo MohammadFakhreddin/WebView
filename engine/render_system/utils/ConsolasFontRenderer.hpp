@@ -25,11 +25,14 @@ namespace MFA
 
         std::unique_ptr<TextData> AllocateTextData(int maxCharCount = 2048);
 
-        enum class TextAlign {Center, Left, Right};
+        enum class HorizontalTextAlign {Center, Left, Right};
+
+        enum class VerticalTextAlign { Top, Center };
 
         struct TextParams
         {
-            TextAlign textAlign = TextAlign::Left;
+            HorizontalTextAlign hTextAlign = HorizontalTextAlign::Left;
+            VerticalTextAlign vTextAlign = VerticalTextAlign::Top;
             float scale = 1.5f;
             glm::vec3 color{1.0f, 1.0f, 1.0f};
         };
@@ -50,7 +53,9 @@ namespace MFA
         ) const;
 
         [[nodiscard]]
-        int TextWidth(std::string_view const& text, TextParams params);
+        float TextWidth(std::string_view const& text, TextParams params);
+
+        float TextHeight(float textScale = 1.5f) const;
 
     private:
 
@@ -65,6 +70,8 @@ namespace MFA
         std::shared_ptr<TextOverlayPipeline> _pipeline{};
 
         RT::DescriptorSetGroup _descriptorSet{};
+
+        float _fontHeight = 0.0f;
   
     };
 

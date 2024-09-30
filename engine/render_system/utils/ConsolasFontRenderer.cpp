@@ -16,6 +16,20 @@ namespace MFA
     {
         CreateFontTextureBuffer();
         _descriptorSet = _pipeline->CreateDescriptorSet(*_fontTexture);
+
+        float minY = std::numeric_limits<float>::max();
+        float maxY = std::numeric_limits<float>::min();
+        for (int i = 0; i < STB_FONT_consolas_24_latin1_NUM_CHARS; ++i)
+        {
+            stb_fontchar* charData = &_stbFontData[i];
+            minY = std::min<float>(charData->y0, minY);
+            minY = std::min<float>(charData->y1, minY);
+
+            maxY = std::max<float>(charData->y0, maxY);
+            maxY = std::max<float>(charData->y1, maxY);
+        }
+
+        _fontHeight = std::abs(maxY - minY);
     }
         
     //------------------------------------------------------------------
@@ -61,35 +75,20 @@ namespace MFA
         auto const windowHeight = static_cast<float>(LogicalDevice::Instance->GetWindowHeight());
 
         int letterRange = inOutData.letterRange.empty() == false ? inOutData.letterRange.back() : 0;
-        
+        int letterRangeBegin = letterRange;
+
         auto * mapped = &reinterpret_cast<TextOverlayPipeline::Vertex*>(inOutData.vertexData->Data())[letterRange * 4];
-        
+        auto* mappedBegin = mapped;
+
         const float charW = 1.5f * params.scale / windowWidth;
-        const float charH = 1.5f * params.scale / windowHeight;
+        const float charH = 2.0f * params.scale / windowWidth;
 
         float fbW = windowWidth;
         float fbH = windowHeight;
         x = (x / fbW * 2.0f) - 1.0f;
         y = (y / fbH * 2.0f) - 1.0f;
 
-        // Calculate text width
-        float textWidth = TextWidth(text, params);
-
-        switch (params.textAlign)
-        {
-            case TextAlign::Right:
-                x -= textWidth;
-                break;
-            case TextAlign::Center:
-                x -= textWidth / 2.0f;
-                break;
-            case TextAlign::Left:
-                break;
-        }
-
         bool success = true;
-
-        auto const startX = x;
 
         // Generate a uv mapped quad per char in the new text
         for (auto letter : text)
@@ -98,13 +97,6 @@ namespace MFA
             {
                 success = false;
                 break;
-            }
-
-            if (letter == '\n')
-            {
-                x = startX;
-                y += charH;
-                continue;
             }
 
             int letterIdx = static_cast<uint32_t>(letter) - firstChar;
@@ -117,6 +109,7 @@ namespace MFA
                 mapped->uv.x = charData->s0;
                 mapped->uv.y = charData->t0;
                 mapped->color = params.color;
+                
                 mapped++;
 
                 mapped->position.x = (x + (float)charData->x1 * charW);
@@ -124,6 +117,7 @@ namespace MFA
                 mapped->uv.x = charData->s1;
                 mapped->uv.y = charData->t0;
                 mapped->color = params.color;
+                
                 mapped++;
 
                 mapped->position.x = (x + (float)charData->x0 * charW);
@@ -131,6 +125,7 @@ namespace MFA
                 mapped->uv.x = charData->s0;
                 mapped->uv.y = charData->t1;
                 mapped->color = params.color;
+                
                 mapped++;
 
                 mapped->position.x = (x + (float)charData->x1 * charW);
@@ -138,12 +133,44 @@ namespace MFA
                 mapped->uv.x = charData->s1;
                 mapped->uv.y = charData->t1;
                 mapped->color = params.color;
+                
                 mapped++;
 
                 x += charData->advance * charW;
 
                 letterRange++;
             }
+        }
+
+        mapped = mappedBegin;
+        int itrCount = std::min<int>(inOutData.maxLetterCount - letterRangeBegin, text.size() * 4);
+
+        switch (params.vTextAlign)
+        {
+        case VerticalTextAlign::Center:
+            for (int i = 0; i < itrCount; ++i)
+            {
+                mapped[i].position.y -= _fontHeight * charH;
+            }
+            break;
+        }
+    	
+        auto const width = TextWidth(text, params);
+        switch (params.hTextAlign)
+        {
+        case HorizontalTextAlign::Right:
+            for (int i = 0; i < itrCount; ++i)
+            {
+                mappedBegin[i].position.x -= width;
+            }
+            break;
+        case HorizontalTextAlign::Center:
+            auto const halfWidth = width * 0.5f;
+            for (int i = 0; i < itrCount; ++i)
+            {
+                mappedBegin[i].position.x -= halfWidth;
+            }
+            break;
         }
 
         inOutData.letterRange.emplace_back(letterRange);
@@ -186,7 +213,7 @@ namespace MFA
 
     //------------------------------------------------------------------
 
-    int ConsolasFontRenderer::TextWidth(std::string_view const& text, TextParams params)
+    float ConsolasFontRenderer::TextWidth(std::string_view const& text, TextParams params)
     {
         auto const windowWidth = static_cast<float>(LogicalDevice::Instance->GetWindowWidth());
         const float charW = 1.5f * params.scale / windowWidth;
@@ -202,7 +229,16 @@ namespace MFA
             }
         }
 
-        return charW;
+        return textWidth;
+    }
+
+    //------------------------------------------------------------------
+
+    float ConsolasFontRenderer::TextHeight(float const textScale) const
+    {
+        auto const windowWidth = static_cast<float>(LogicalDevice::Instance->GetWindowWidth());
+        const float charH = 2.0f * textScale / windowWidth;
+        return charH * _fontHeight;
     }
 
     //------------------------------------------------------------------

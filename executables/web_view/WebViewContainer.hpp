@@ -3,6 +3,7 @@
 #include "utils/ConsolasFontRenderer.hpp"
 
 #include "litehtml.h"
+#include "utils/LineRenderer.hpp"
 
 
 class WebViewContainer : public litehtml::document_container
@@ -11,9 +12,13 @@ class WebViewContainer : public litehtml::document_container
 public:
 
 	using FontRenderer = MFA::ConsolasFontRenderer;
+	using LineRenderer = MFA::LineRenderer;
 
 	// TODO: We need an image renderer class as well
-	explicit WebViewContainer(std::shared_ptr<FontRenderer> fontRenderer);
+	explicit WebViewContainer(
+		std::shared_ptr<LineRenderer> lineRenderer,
+		std::shared_ptr<FontRenderer> fontRenderer
+	);
 
 	~WebViewContainer() override;
 
@@ -135,11 +140,14 @@ protected:
 
 private:
 
+	static glm::vec3 ConvertColor(litehtml::web_color const & webColor);
+
 	std::shared_ptr<FontRenderer> _fontRenderer = nullptr;
+	std::shared_ptr<LineRenderer> _lineRenderer = nullptr;
 
 	litehtml::document::ptr _html = nullptr;
 
 	std::unordered_map<litehtml::uint_ptr, std::unique_ptr<FontRenderer::TextData>> _textDataMap{};
-	
+	std::unordered_map<litehtml::uint_ptr, std::vector<std::function<void(MFA::RT::CommandRecordState&)>>> _drawCallsMap{};
 
 };

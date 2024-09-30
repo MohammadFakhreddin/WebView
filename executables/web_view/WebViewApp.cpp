@@ -48,9 +48,25 @@ void WebViewApp::Run()
     );
     MFA_ASSERT(fontSampler != nullptr);
 
-    auto const pipeline = std::make_shared<TextOverlayPipeline>(_displayRenderPass, fontSampler);
-    _fontRenderer = std::make_shared<ConsolasFontRenderer>(pipeline);
-    _webViewContainer = std::make_unique<WebViewContainer>(_fontRenderer);
+    auto const fontPipeline = std::make_shared<TextOverlayPipeline>(_displayRenderPass, fontSampler);
+    auto const fontRenderer = std::make_shared<ConsolasFontRenderer>(fontPipeline);
+
+    auto viewProjectionBuffer = RB::CreateHostVisibleUniformBuffer(
+        device->GetVkDevice(),
+        device->GetPhysicalDevice(),
+        sizeof(LinePipeline::ViewProjection),
+        1
+    );
+    auto const identityMat = glm::identity<glm::mat4>();
+    Alias alias{ identityMat};
+	RB::UpdateHostVisibleBuffer(
+        device->GetVkDevice(),
+        *viewProjectionBuffer->buffers[0], 
+        alias 
+    );
+    auto const linePipeline = std::make_shared<LinePipeline>(_displayRenderPass, viewProjectionBuffer, 1e4);
+    auto const lineRenderer = std::make_shared<LineRenderer>(linePipeline);
+    _webViewContainer = std::make_unique<WebViewContainer>(lineRenderer, fontRenderer);
 
     SDL_GL_SetSwapInterval(0);
     SDL_Event e;

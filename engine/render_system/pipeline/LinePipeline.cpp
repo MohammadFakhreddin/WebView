@@ -212,7 +212,7 @@ namespace MFA
 
             // ViewProjectionTransform
             VkDescriptorBufferInfo bufferInfo{
-                .buffer = mViewProjBuffer->buffers[frameIndex]->buffer,
+                .buffer = mViewProjBuffer->buffers[frameIndex % mViewProjBuffer->buffers.size()]->buffer,
                 .offset = 0,
                 .range = mViewProjBuffer->bufferSize,
             };
