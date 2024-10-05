@@ -54,6 +54,8 @@ list(
     "${CMAKE_CURRENT_SOURCE_DIR}/utils/PointRenderer.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/utils/ConsolasFontRenderer.hpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/utils/ConsolasFontRenderer.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/utils/SolidFillRenderer.hpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/utils/SolidFillRenderer.cpp"
 )
 
 set(LIBRARY_NAME "RenderSystem")

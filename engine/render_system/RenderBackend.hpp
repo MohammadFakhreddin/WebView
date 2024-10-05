@@ -510,7 +510,7 @@ namespace MFA::RenderBackend
         uint32_t vertexOffset = 0,
         uint32_t firstInstance = 0
     );
-
+    // TODO: I think we should return unique ptr for all the cases and then use can decide what to do with them
     std::shared_ptr<RT::BufferGroup> CreateBufferGroup(
         VkDevice device,
         VkPhysicalDevice physicalDevice,

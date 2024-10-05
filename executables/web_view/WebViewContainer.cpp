@@ -12,11 +12,13 @@
 
 WebViewContainer::WebViewContainer(
 	std::shared_ptr<LineRenderer> lineRenderer,
-	std::shared_ptr<FontRenderer> fontRenderer
+	std::shared_ptr<FontRenderer> fontRenderer,
+	std::shared_ptr<SolidFillRenderer> solidFillRenderer
 )
 	: litehtml::document_container()
 	, _fontRenderer(std::move(fontRenderer))
 	, _lineRenderer(std::move(lineRenderer))
+	, _solidFillRenderer(std::move(solidFillRenderer))
 {
 	auto * path = MFA::Path::Instance;
 	auto htmlPath = path->Get("web_view/Test.html");
@@ -55,9 +57,14 @@ void WebViewContainer::Update()
 
 void WebViewContainer::UpdateBuffers(const MFA::RT::CommandRecordState& recordState)
 {
-	for (auto& textData : _textDataMap | std::views::values)
+	for (auto & textData : _textDataList)
 	{
 		textData->vertexData->Update(recordState);
+	}
+
+	for (auto& tracker : _solidFillBuffers)
+	{
+		tracker->Update(recordState);
 	}
 }
 
@@ -65,16 +72,9 @@ void WebViewContainer::UpdateBuffers(const MFA::RT::CommandRecordState& recordSt
 
 void WebViewContainer::DisplayPass(MFA::RT::CommandRecordState& recordState)
 {
-	for (auto& textData : _textDataMap | std::views::values)
+	for (auto & drawCall : _drawCalls)
 	{
-		_fontRenderer->Draw(recordState, *textData);
-	}
-	for (auto & drawCalls : _drawCallsMap | std::views::values)
-	{
-		for (auto & drawCall : drawCalls)
-		{
-			drawCall(recordState);
-		}
+		drawCall(recordState);
 	}
 }
 
@@ -128,10 +128,10 @@ void WebViewContainer::draw_borders(
 	bool root
 )
 {
-	_drawCallsMap[hdc].emplace_back([this, draw_pos, borders](MFA::RT::CommandRecordState& recordState)->void
+	_drawCalls.emplace_back([this, draw_pos, borders](MFA::RT::CommandRecordState& recordState)->void
 	{
-		float windowWidth = MFA::LogicalDevice::Instance->GetWindowWidth();
-		float windowHeight = MFA::LogicalDevice::Instance->GetWindowHeight();
+		auto const windowWidth = static_cast<float>(MFA::LogicalDevice::Instance->GetWindowWidth());
+		auto const windowHeight = static_cast<float>(MFA::LogicalDevice::Instance->GetWindowHeight());
 
 		glm::vec3 topLeft {
 			static_cast<float>(draw_pos.x) / windowWidth,
@@ -147,8 +147,6 @@ void WebViewContainer::draw_borders(
 		_lineRenderer->Draw(recordState, bottomLeft, bottomRight, glm::vec4{ ConvertColor(borders.bottom.color) , 1.0f });
 		_lineRenderer->Draw(recordState, topRight, bottomRight, glm::vec4{ ConvertColor(borders.right.color) , 1.0f});
 	});
-	
-	// TODO, Maybe we can use the line renderer here
 }
 
 //=========================================================================================
@@ -159,7 +157,7 @@ void WebViewContainer::draw_conic_gradient(
 	const litehtml::background_layer::conic_gradient& gradient
 )
 {
-	int here;
+
 }
 
 //=========================================================================================
@@ -171,7 +169,7 @@ void WebViewContainer::draw_image(
 	const std::string& base_url
 )
 {
-	int here;
+
 }
 
 //=========================================================================================
@@ -182,14 +180,14 @@ void WebViewContainer::draw_linear_gradient(
 	const litehtml::background_layer::linear_gradient& gradient
 )
 {
-	int here;
+
 }
 
 //=========================================================================================
 
 void WebViewContainer::draw_list_marker(litehtml::uint_ptr hdc, const litehtml::list_marker& marker)
 {
-	int here;
+
 }
 
 //=========================================================================================
@@ -200,7 +198,7 @@ void WebViewContainer::draw_radial_gradient(
 	const litehtml::background_layer::radial_gradient& gradient
 )
 {
-	int here;
+
 }
 
 //=========================================================================================
@@ -211,40 +209,48 @@ void WebViewContainer::draw_solid_fill(
 	const litehtml::web_color& color
 )
 {
-	//int here;
+	auto* device = MFA::LogicalDevice::Instance;
+	auto const windowWidth = static_cast<float>(device->GetWindowWidth());
+	auto const windowHeight = static_cast<float>(device->GetWindowHeight());
 
-	//layer.
-	//_drawCallsMap[hdc].emplace_back([this, layer, color](MFA::RT::CommandRecordState & recordState)->void
-	//{
-		// TODO: We need a solid color pipline to draw color
-		//VkViewport viewport = {};
-		//viewport.x = layer.border_box.x;
-		//viewport.y = layer.border_box.y;
-		//viewport.width = static_cast<float>(layer.border_box.width);
-		//viewport.height = static_cast<float>(layer.border_box.height);
-		//viewport.minDepth = 0.0f;
-		//viewport.maxDepth = 1.0f;
+	auto const halfWidth = windowWidth * 0.5f;
+	auto const halfHeight = windowHeight * 0.5f;
 
-		//VkRect2D scissor = {};
-		//scissor.offset = { layer.border_box.x, layer.border_box.y };
-		//scissor.extent = VkExtent2D{ (uint32_t)layer.border_box.width, (uint32_t)layer.border_box.height };
+	float borderX = (static_cast<float>(layer.border_box.x) - halfWidth) / halfWidth;
+	float borderY = (static_cast<float>(layer.border_box.y) - halfHeight) / halfHeight;
 
-		//MFA::RB::SetViewport(recordState.commandBuffer, viewport);
-		//MFA::RB::SetScissor(recordState.commandBuffer, scissor);
+	float solidWidth = static_cast<float>(layer.border_box.width) / halfWidth;
+	float solidHeight = static_cast<float>(layer.border_box.height) / halfHeight;
 
-		//auto myColor = ConvertColor(color);
+	glm::vec2 pos0{ borderX, borderY };
+	glm::vec3 color0 = ConvertColor(color);
 
-		//std::vector<VkClearValue> clearValues(3);
-		//clearValues[0].color = VkClearColorValue{.float32 = {myColor.x, myColor.y, myColor.z, 1.0f}};
+	glm::vec2 pos1 = pos0 + glm::vec2{ solidWidth, 0.0f };
+	glm::vec3 color1 = color0;
 
-		//vkCmdClearAttachments(recordState.commandBuffer,
-		//	recordState.frameIndex, // first attachment index
-		//	1, // number of attachments to clear
-		//	clearValues.data(),
-		//	nullptr); // pObjectRects
+	glm::vec2 pos2 = pos0 + glm::vec2{ 0.0f, solidHeight };
+	glm::vec3 color2 = color0;
 
-	//});
+	glm::vec2 pos3 = pos0 + glm::vec2{ solidWidth, solidHeight };
+	glm::vec3 color3 = color0;
 
+	std::shared_ptr<MFA::LocalBufferTracker> bufferTracker = _solidFillRenderer->AllocateBuffer(
+		pos0, 
+		pos1, 
+		pos2, 
+		pos3, 
+		color0, 
+		color1, 
+		color2, 
+		color3,
+		layer.border_radius.bottom_left_x // TODO: Each of them need a border radius
+	);
+	_solidFillBuffers.emplace_back(bufferTracker);
+
+	_drawCalls.emplace_back([this, bufferTracker](MFA::RT::CommandRecordState& recordState)->void
+	{
+		_solidFillRenderer->Draw(recordState, *bufferTracker);
+	});
 }
 
 //=========================================================================================
@@ -257,22 +263,22 @@ void WebViewContainer::draw_text(
 	const litehtml::position& pos
 )
 {
-	auto & textData = _textDataMap[hdc];
-	if (textData == nullptr)
-	{
-		textData = _fontRenderer->AllocateTextData();
-	}
-	FontRenderer::TextParams textParams{};
-	// TODO: Font size and style and other things
-	// TODO: Alpha
-	textParams.color = ConvertColor(color);
+	std::shared_ptr textData = _fontRenderer->AllocateTextData();
 
+	FontRenderer::TextParams textParams{};
+	textParams.color = ConvertColor(color);
 	textParams.hTextAlign = MFA::ConsolasFontRenderer::HorizontalTextAlign::Left;
 	
 	float x = pos.x;
 	float y = pos.y;
 
 	_fontRenderer->AddText(*textData, text, x, y, textParams);
+	_textDataList.emplace_back(textData);
+
+	_drawCalls.emplace_back([this, textData](MFA::RT::CommandRecordState& recordState)->void
+	{
+		_fontRenderer->Draw(recordState, *textData);
+	});
 }
 
 //=========================================================================================
@@ -403,9 +409,9 @@ glm::vec3 WebViewContainer::ConvertColor(litehtml::web_color const& webColor)
 {
 	return glm::vec3
 	{
-		webColor.red / 255.0f,
-		webColor.green / 255.0f,
-		webColor.blue / 255.0f
+		static_cast<float>(webColor.red) / 255.0f,
+		static_cast<float>(webColor.green) / 255.0f,
+		static_cast<float>(webColor.blue) / 255.0f
 	};
 }
 

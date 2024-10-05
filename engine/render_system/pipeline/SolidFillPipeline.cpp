@@ -15,7 +15,6 @@ namespace MFA
 	SolidFillPipeline::SolidFillPipeline(std::shared_ptr<DisplayRenderPass> displayRenderPass)
 		: _displayRenderPass(std::move(displayRenderPass))
 	{
-		_descriptorPool = RB::CreateDescriptorPool(LogicalDevice::Instance->GetVkDevice(), 1);
 		CreatePipeline();
 	}
 
@@ -24,8 +23,6 @@ namespace MFA
 	SolidFillPipeline::~SolidFillPipeline()
 	{
 		_pipeline = nullptr;
-		_descriptorLayout = nullptr;
-		_descriptorPool = nullptr;
 	}
 
 	//=================================================================
@@ -100,8 +97,8 @@ namespace MFA
 				.inputRate = VK_VERTEX_INPUT_RATE_VERTEX,
 			},
 			VkVertexInputBindingDescription {
-				.binding = 0,
-				.stride = sizeof(Vertex),
+				.binding = 1,
+				.stride = sizeof(Instance),
 				.inputRate = VK_VERTEX_INPUT_RATE_INSTANCE,
 			}
 		};
@@ -128,12 +125,26 @@ namespace MFA
 			.format = VK_FORMAT_R32G32B32_SFLOAT,
 			.offset = offsetof(Instance, innerPos0)
 		});
+		// Color0
+		inputAttributeDescriptions.emplace_back(VkVertexInputAttributeDescription{
+			.location = static_cast<uint32_t>(inputAttributeDescriptions.size()),
+			.binding = 0,
+			.format = VK_FORMAT_R32G32B32_SFLOAT,
+			.offset = offsetof(Instance, color0)
+		});
 		// InnerPos1
 		inputAttributeDescriptions.emplace_back(VkVertexInputAttributeDescription{
 			.location = static_cast<uint32_t>(inputAttributeDescriptions.size()),
 			.binding = 0,
 			.format = VK_FORMAT_R32G32B32_SFLOAT,
 			.offset = offsetof(Instance, innerPos1)
+		});
+		// Color1
+		inputAttributeDescriptions.emplace_back(VkVertexInputAttributeDescription{
+			.location = static_cast<uint32_t>(inputAttributeDescriptions.size()),
+			.binding = 0,
+			.format = VK_FORMAT_R32G32B32_SFLOAT,
+			.offset = offsetof(Instance, color1)
 		});
 		// InnerPos2
 		inputAttributeDescriptions.emplace_back(VkVertexInputAttributeDescription{
@@ -142,12 +153,26 @@ namespace MFA
 			.format = VK_FORMAT_R32G32B32_SFLOAT,
 			.offset = offsetof(Instance, innerPos2)
 		});
+		// Color2
+		inputAttributeDescriptions.emplace_back(VkVertexInputAttributeDescription{
+			.location = static_cast<uint32_t>(inputAttributeDescriptions.size()),
+			.binding = 0,
+			.format = VK_FORMAT_R32G32B32_SFLOAT,
+			.offset = offsetof(Instance, color2)
+		});
 		// InnerPos3
 		inputAttributeDescriptions.emplace_back(VkVertexInputAttributeDescription{
 			.location = static_cast<uint32_t>(inputAttributeDescriptions.size()),
 			.binding = 0,
 			.format = VK_FORMAT_R32G32B32_SFLOAT,
 			.offset = offsetof(Instance, innerPos3)
+		});
+		// Color3
+		inputAttributeDescriptions.emplace_back(VkVertexInputAttributeDescription{
+			.location = static_cast<uint32_t>(inputAttributeDescriptions.size()),
+			.binding = 0,
+			.format = VK_FORMAT_R32G32B32_SFLOAT,
+			.offset = offsetof(Instance, color3)
 		});
 		// BorderRadius
 		inputAttributeDescriptions.emplace_back(VkVertexInputAttributeDescription{
@@ -168,13 +193,10 @@ namespace MFA
 		pipelineOptions.depthStencil.depthTestEnable = false;
 		pipelineOptions.depthStencil.depthWriteEnable = false;
 
-		// pipeline layout
-		std::vector<VkDescriptorSetLayout> setLayout{ _descriptorLayout->descriptorSetLayout };
-
 		const auto pipelineLayout = RB::CreatePipelineLayout(
 			LogicalDevice::Instance->GetVkDevice(),
-			setLayout.size(),
-			setLayout.data(),
+			0,
+			nullptr,
 			0,
 			nullptr
 		);

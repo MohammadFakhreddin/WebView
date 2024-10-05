@@ -55,6 +55,7 @@ namespace MFA
         [[nodiscard]]
         float TextWidth(std::string_view const& text, TextParams params);
 
+        [[nodiscard]]
         float TextHeight(float textScale = 1.5f) const;
 
     private:

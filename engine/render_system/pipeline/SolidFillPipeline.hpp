@@ -2,9 +2,9 @@
 
 #include "RenderTypes.hpp"
 
-#include <glm/glm.hpp>
-
 #include "render_pass/DisplayRenderPass.hpp"
+
+#include <glm/glm.hpp>
 
 namespace MFA
 {
@@ -12,37 +12,30 @@ namespace MFA
     {
     public:
 
+        using Position = glm::vec2;
+        using Color = glm::vec3;
+
         struct Vertex
         {
-            glm::vec3 position{};
-            glm::vec3 color{};
+            Position position{};
+            Color color{};
         };
 
         struct Instance
         {
-            glm::vec3 innerPos0{};
-            glm::vec3 innerPos1{};
-            glm::vec3 innerPos2{};
-            glm::vec3 innerPos3{};
-            float borderRadius{};
-        };
+            Position innerPos0{};
+            Color color0{};
 
-        struct Boundary
-        {
-            glm::vec3 pos0{};
-            float placeholder0{};
+            Position innerPos1{};
+            Color color1{};
 
-            glm::vec3 pos1{};
-            float placeholder1{};
+            Position innerPos2{};
+            Color color2{};
 
-            glm::vec3 pos2{};
-            float placeholder2{};
+            Position innerPos3{};
+            Color color3{};
 
-            glm::vec3 pos3{};
-            float placeholder3{};
-
-            float borderRadius{};
-            glm::vec3 placeholder4{};
+        	float borderRadius{};
         };
 
         explicit SolidFillPipeline(std::shared_ptr<DisplayRenderPass> displayRenderPass);
@@ -60,8 +53,6 @@ namespace MFA
 
     	std::shared_ptr<DisplayRenderPass> _displayRenderPass{};
         std::shared_ptr<RT::PipelineGroup> _pipeline{};
-        std::shared_ptr<RT::DescriptorPool> _descriptorPool{};
-        std::shared_ptr<RT::DescriptorSetLayoutGroup> _descriptorLayout{};
-
+        
     };
 }

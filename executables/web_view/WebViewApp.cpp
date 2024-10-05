@@ -54,7 +54,10 @@ void WebViewApp::Run()
     auto const linePipeline = std::make_shared<LinePipeline>(_displayRenderPass, 1e4);
     auto const lineRenderer = std::make_shared<LineRenderer>(linePipeline);
 
-    _webViewContainer = std::make_unique<WebViewContainer>(lineRenderer, fontRenderer);
+    auto const solidFillPipeline = std::make_shared<SolidFillPipeline>(_displayRenderPass);
+    auto const solidFillRenderer = std::make_shared<SolidFillRenderer>(solidFillPipeline);
+
+    _webViewContainer = std::make_unique<WebViewContainer>(lineRenderer, fontRenderer, solidFillRenderer);
 
     SDL_GL_SetSwapInterval(0);
     SDL_Event e;

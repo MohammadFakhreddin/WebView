@@ -3,7 +3,9 @@
 #include "utils/ConsolasFontRenderer.hpp"
 
 #include "litehtml.h"
+#include "pipeline/SolidFillPipeline.hpp"
 #include "utils/LineRenderer.hpp"
+#include "utils/SolidFillRenderer.hpp"
 
 
 class WebViewContainer : public litehtml::document_container
@@ -13,11 +15,13 @@ public:
 
 	using FontRenderer = MFA::ConsolasFontRenderer;
 	using LineRenderer = MFA::LineRenderer;
+	using SolidFillRenderer = MFA::SolidFillRenderer;
 
 	// TODO: We need an image renderer class as well
 	explicit WebViewContainer(
 		std::shared_ptr<LineRenderer> lineRenderer,
-		std::shared_ptr<FontRenderer> fontRenderer
+		std::shared_ptr<FontRenderer> fontRenderer,
+		std::shared_ptr<SolidFillRenderer> solidFillRenderer
 	);
 
 	~WebViewContainer() override;
@@ -144,10 +148,12 @@ private:
 
 	std::shared_ptr<FontRenderer> _fontRenderer = nullptr;
 	std::shared_ptr<LineRenderer> _lineRenderer = nullptr;
+	std::shared_ptr<SolidFillRenderer> _solidFillRenderer = nullptr;
 
 	litehtml::document::ptr _html = nullptr;
 
-	std::unordered_map<litehtml::uint_ptr, std::unique_ptr<FontRenderer::TextData>> _textDataMap{};
-	std::unordered_map<litehtml::uint_ptr, std::vector<std::function<void(MFA::RT::CommandRecordState&)>>> _drawCallsMap{};
+	std::vector<std::shared_ptr<FontRenderer::TextData>> _textDataList{};
+	std::vector<std::shared_ptr<MFA::LocalBufferTracker>> _solidFillBuffers{};
+	std::vector<std::function<void(MFA::RT::CommandRecordState&)>> _drawCalls{};
 
 };
