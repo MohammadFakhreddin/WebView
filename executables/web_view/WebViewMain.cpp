@@ -25,7 +25,7 @@ int main()
     {
         auto webViewApp = std::make_unique<WebViewApp>();
         webViewApp->Run();
-
-        
     }
+
+	return 0;
 }

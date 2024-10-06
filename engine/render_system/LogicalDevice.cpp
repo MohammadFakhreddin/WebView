@@ -379,7 +379,7 @@ namespace MFA
 
         RB::DestroyWindowSurface(_vkInstance, _surface);
 
-    #if define(MFA_DEBUG) and defined(USE_VALIDATION_LAYERS)
+    #if defined(MFA_DEBUG) and defined(USE_VALIDATION_LAYERS)
         RB::DestroyDebugReportCallback(_vkInstance, _vkDebugReportCallbackExt);
     #endif
 
