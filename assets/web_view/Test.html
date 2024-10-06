@@ -1,26 +1,53 @@
 <html>
-  <body style="width: 100%; height: 100%;">
-      <div style="width: 100%; height: 100%;display: flex; flex-direction: row; justify-content: center; align-content: center; align-items: center;">
-        <div style="width: 100%; height: 100%;display: flex; flex-direction: column; justify-content: center; align-content: center; align-items: center;">
-          <text style="color: white;">
-            SampleText0 SampleText1
+  <style>
+    .center-column {
+      display: flex; 
+      flex-direction: column; 
+      justify-content: center; 
+      align-content: center; 
+      align-items: center;
+    }
+    .center-row {
+      display: flex; 
+      flex-direction: row; 
+      justify-content: center; 
+      align-content: center; 
+      align-items: center;
+    }
+    .button {
+      background-color: white; 
+      padding: 20px; 
+      border-radius: 12px;
+      width: 200px;
+    }
+    .spacer {
+      padding: 16px;
+    }
+  </style>
+  <body style="width: 100%; height: 100%; background-color: black;">
+      <div style="width: 100%; height: 100%;" class="center-row">
+        <div style="width: 100%; height: 100%;" class="center-column">
+          <text style="color: white; font-size: 32px;">
+            Crazy tank game
           </text>
-          <div style="padding: 10px;"></div>
-          <div style="background-color: white; display: flex; flex-direction: column; justify-content: center; align-content: center; align-items: center; padding: 20px; border-radius: 32px;">
-            <!-- <div style="width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-content: center; align-items: center;"> -->
-            <div>
-              Press here
-            </div>
-            <div>
-              Or here
-            </div>
-            <!-- </div> -->
+          <div class="spacer"></div> 
+          <div class="spacer"></div> 
+          <div class="center-column button">
+            New game
+          </div>
+          <div class="spacer"></div>
+          <div class="center-column button">
+            Continue
+          </div>
+          <div class="spacer"></div>
+          <div class="center-column button">
+            Settings
+          </div>
+          <div class="spacer"></div>
+          <div class="center-column button">
+            Exit
           </div>
         </div>
       </div>
-      <div style="position: absolute; top:0; left:0; color: white; background-color: green;"> top left</div>
-      <div style="position: absolute; top:0; right:0; color: white; background-color: chocolate;"> top right</div>
-      <div style="position: absolute; bottom:0; right:0; color: white; background-color: blue; margin-bottom: 9px;"> bottom right</div>
-      <div style="position: absolute; bottom:0; left:0; color: white; background-color: red; margin-bottom: 9px;"> bottom left</div>
   </body>
 </html>

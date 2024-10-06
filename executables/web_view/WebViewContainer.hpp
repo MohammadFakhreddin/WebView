@@ -156,4 +156,6 @@ private:
 	std::vector<std::shared_ptr<MFA::LocalBufferTracker>> _solidFillBuffers{};
 	std::vector<std::function<void(MFA::RT::CommandRecordState&)>> _drawCalls{};
 
+	std::vector<float> _fontScales{};
+
 };

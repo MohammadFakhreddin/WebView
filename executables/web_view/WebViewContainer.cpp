@@ -93,16 +93,19 @@ litehtml::element::ptr WebViewContainer::create_element(
 
 litehtml::uint_ptr WebViewContainer::create_font(
 	const char* faceName, 
-	int size, 
-	int weight,
+	int const size, 
+	int const weight,
 	litehtml::font_style italic, 
 	unsigned int decoration, 
 	litehtml::font_metrics* fm
 )
 {
-	fm->height = static_cast<int>(_fontRenderer->TextHeight() * MFA::LogicalDevice::Instance->GetWindowHeight() * 0.5f);
+	float const scale = static_cast<float>(size) / static_cast<float>(get_default_font_size());
+	float const windowHeight = static_cast<float>(MFA::LogicalDevice::Instance->GetWindowHeight());
+	fm->height = static_cast<int>(_fontRenderer->TextHeight(scale) * windowHeight * 0.5f);
 	fm->draw_spaces = false;
-	return 1;
+	_fontScales.emplace_back(scale);
+	return _fontScales.size();
 }
 
 //=========================================================================================
@@ -269,9 +272,10 @@ void WebViewContainer::draw_text(
 	textParams.color = ConvertColor(color);
 	textParams.hTextAlign = FontRenderer::HorizontalTextAlign::Left;
 	textParams.vTextAlign = FontRenderer::VerticalTextAlign::Top;
+	textParams.scale = _fontScales[hFont - 1];
 	
-	float x = pos.x;
-	float y = pos.y;
+	float x = static_cast<float>(pos.x);
+	float y = static_cast<float>(pos.y);
 
 	_fontRenderer->AddText(*textData, text, x, y, textParams);
 	_textDataList.emplace_back(textData);
@@ -394,7 +398,9 @@ void WebViewContainer::set_cursor(const char* cursor)
 int WebViewContainer::text_width(const char* text, litehtml::uint_ptr hFont)
 {
 	auto const windowWidth = static_cast<float>(MFA::LogicalDevice::Instance->GetWindowWidth()) * 0.5f;
-	return static_cast<int>(_fontRenderer->TextWidth(std::string_view{text, strlen(text)}, FontRenderer::TextParams{}) * windowWidth);
+	FontRenderer::TextParams params{};
+	params.scale = _fontScales[hFont - 1];
+	return static_cast<int>(_fontRenderer->TextWidth(std::string_view{text, strlen(text)}, params) * windowWidth);
 }
 
 //=========================================================================================
