@@ -5,6 +5,8 @@
 #include "BedrockPlatforms.hpp"
 #include "RenderBackend.hpp"
 
+#define USE_VALIDATION_LAYERS
+
 namespace MFA
 {
 
@@ -299,7 +301,7 @@ namespace MFA
 
         _depthFormat = RB::FindDepthFormat(_physicalDevice);
 
-    #if defined(MFA_DEBUG)  // TODO Fix support for android
+    #if defined(MFA_DEBUG) and defined(USE_VALIDATION_LAYERS)
         _vkDebugReportCallbackExt = RB::CreateDebugCallback(
             _vkInstance,
             DebugCallback
@@ -377,7 +379,7 @@ namespace MFA
 
         RB::DestroyWindowSurface(_vkInstance, _surface);
 
-    #ifdef MFA_DEBUG
+    #if define(MFA_DEBUG) and defined(USE_VALIDATION_LAYERS)
         RB::DestroyDebugReportCallback(_vkInstance, _vkDebugReportCallbackExt);
     #endif
 

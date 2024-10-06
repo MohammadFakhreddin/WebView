@@ -73,6 +73,9 @@ namespace MFA
         RT::DescriptorSetGroup _descriptorSet{};
 
         float _fontHeight = 0.0f;
+
+        static constexpr float WidthModifier = 1.5f;
+        static constexpr float HeightModifier = 2.0f;
   
     };
 

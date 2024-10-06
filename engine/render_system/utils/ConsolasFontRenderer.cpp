@@ -80,8 +80,8 @@ namespace MFA
         auto * mapped = &reinterpret_cast<TextOverlayPipeline::Vertex*>(inOutData.vertexData->Data())[letterRange * 4];
         auto* mappedBegin = mapped;
 
-        const float charW = 1.5f * params.scale / windowWidth;
-        const float charH = 2.0f * params.scale / windowWidth;
+        const float charW = WidthModifier * params.scale / windowWidth;
+        const float charH = HeightModifier * params.scale / windowWidth;
 
         float fbW = windowWidth;
         float fbH = windowHeight;
@@ -216,7 +216,7 @@ namespace MFA
     float ConsolasFontRenderer::TextWidth(std::string_view const& text, TextParams params)
     {
         auto const windowWidth = static_cast<float>(LogicalDevice::Instance->GetWindowWidth());
-        const float charW = 1.5f * params.scale / windowWidth;
+        const float charW = WidthModifier * params.scale / windowWidth;
 
         float textWidth = 0;
         for (auto letter : text)
@@ -237,7 +237,7 @@ namespace MFA
     float ConsolasFontRenderer::TextHeight(float const textScale) const
     {
         auto const windowWidth = static_cast<float>(LogicalDevice::Instance->GetWindowWidth());
-        const float charH = 2.0f * textScale / windowWidth;
+        const float charH = HeightModifier * textScale / windowWidth;
         return charH * _fontHeight;
     }
 

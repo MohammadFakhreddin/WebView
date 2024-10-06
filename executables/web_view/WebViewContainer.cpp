@@ -41,7 +41,6 @@ WebViewContainer::WebViewContainer(
 
 	_html->render(clip.width);
 	_html->draw(0, 0, 0, &clip);
-	// TODO: We have to redraw after resize
 }
 
 //=========================================================================================
@@ -101,7 +100,7 @@ litehtml::uint_ptr WebViewContainer::create_font(
 	litehtml::font_metrics* fm
 )
 {
-	fm->height = static_cast<int>(_fontRenderer->TextHeight() * MFA::LogicalDevice::Instance->GetWindowHeight()) * 0.5f;
+	fm->height = static_cast<int>(_fontRenderer->TextHeight() * MFA::LogicalDevice::Instance->GetWindowHeight() * 0.5f);
 	fm->draw_spaces = false;
 	return 1;
 }
@@ -129,25 +128,25 @@ void WebViewContainer::draw_borders(
 	bool root
 )
 {
-	_drawCalls.emplace_back([this, draw_pos, borders](MFA::RT::CommandRecordState& recordState)->void
-	{
-		auto const windowWidth = static_cast<float>(MFA::LogicalDevice::Instance->GetWindowWidth());
-		auto const windowHeight = static_cast<float>(MFA::LogicalDevice::Instance->GetWindowHeight());
+	//_drawCalls.emplace_back([this, draw_pos, borders](MFA::RT::CommandRecordState& recordState)->void
+	//{
+	//	auto const windowWidth = static_cast<float>(MFA::LogicalDevice::Instance->GetWindowWidth());
+	//	auto const windowHeight = static_cast<float>(MFA::LogicalDevice::Instance->GetWindowHeight());
 
-		glm::vec3 topLeft {
-			static_cast<float>(draw_pos.x) / windowWidth,
-			static_cast<float>(draw_pos.y) / windowHeight,
-			0.0f
-		};
-		glm::vec3 bottomRight = topLeft + glm::vec3 {windowWidth, windowHeight, 0.0f};
-		glm::vec3 topRight = topLeft + glm::vec3{ windowWidth, 0.0f, 0.0f };
-		glm::vec3 bottomLeft = topLeft + glm::vec3{ 0.0f, windowHeight, 0.0f };
+	//	glm::vec3 topLeft {
+	//		static_cast<float>(draw_pos.x) / windowWidth,
+	//		static_cast<float>(draw_pos.y) / windowHeight,
+	//		0.0f
+	//	};
+	//	glm::vec3 bottomRight = topLeft + glm::vec3 {windowWidth, windowHeight, 0.0f};
+	//	glm::vec3 topRight = topLeft + glm::vec3{ windowWidth, 0.0f, 0.0f };
+	//	glm::vec3 bottomLeft = topLeft + glm::vec3{ 0.0f, windowHeight, 0.0f };
 
-		_lineRenderer->Draw(recordState, topLeft, topRight, glm::vec4{ ConvertColor(borders.top.color) , 1.0f });
-		_lineRenderer->Draw(recordState, topLeft, bottomLeft, glm::vec4{ ConvertColor(borders.left.color) , 1.0f });
-		_lineRenderer->Draw(recordState, bottomLeft, bottomRight, glm::vec4{ ConvertColor(borders.bottom.color) , 1.0f });
-		_lineRenderer->Draw(recordState, topRight, bottomRight, glm::vec4{ ConvertColor(borders.right.color) , 1.0f});
-	});
+	//	_lineRenderer->Draw(recordState, topLeft, topRight, glm::vec4{ ConvertColor(borders.top.color) , 1.0f });
+	//	_lineRenderer->Draw(recordState, topLeft, bottomLeft, glm::vec4{ ConvertColor(borders.left.color) , 1.0f });
+	//	_lineRenderer->Draw(recordState, bottomLeft, bottomRight, glm::vec4{ ConvertColor(borders.bottom.color) , 1.0f });
+	//	_lineRenderer->Draw(recordState, topRight, bottomRight, glm::vec4{ ConvertColor(borders.right.color) , 1.0f});
+	//});
 }
 
 //=========================================================================================
