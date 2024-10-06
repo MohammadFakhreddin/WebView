@@ -1,6 +1,7 @@
 #include "WebViewApp.hpp"
 
 #include "LogicalDevice.hpp"
+#include "Time.hpp"
 #include "WebViewContainer.hpp"
 
 using namespace MFA;
@@ -11,10 +12,7 @@ void WebViewApp::Run()
 {
     auto* device = LogicalDevice::Instance;
 
-    device->SDL_EventSignal.Register([&](SDL_Event* event)->void
-    {
-        // TODO: For webview keys
-    });
+    device->SDL_EventSignal.Register([this](SDL_Event* event)->void{OnSDL_Event(event);});
 
     auto const swapChainResource = std::make_shared<SwapChainRenderResource>();
     auto const depthResource = std::make_shared<DepthRenderResource>();
@@ -49,15 +47,15 @@ void WebViewApp::Run()
     MFA_ASSERT(fontSampler != nullptr);
 
     auto const fontPipeline = std::make_shared<TextOverlayPipeline>(_displayRenderPass, fontSampler);
-    auto const fontRenderer = std::make_shared<ConsolasFontRenderer>(fontPipeline);
+    _fontRenderer = std::make_shared<ConsolasFontRenderer>(fontPipeline);
 
     auto const linePipeline = std::make_shared<LinePipeline>(_displayRenderPass, 1e4);
-    auto const lineRenderer = std::make_shared<LineRenderer>(linePipeline);
+    _lineRenderer = std::make_shared<LineRenderer>(linePipeline);
 
     auto const solidFillPipeline = std::make_shared<SolidFillPipeline>(_displayRenderPass);
-    auto const solidFillRenderer = std::make_shared<SolidFillRenderer>(solidFillPipeline);
+    _solidFillRenderer = std::make_shared<SolidFillRenderer>(solidFillPipeline);
 
-    _webViewContainer = std::make_unique<WebViewContainer>(lineRenderer, fontRenderer, solidFillRenderer);
+    _webViewContainer = std::make_unique<WebViewContainer>(_lineRenderer, _fontRenderer, _solidFillRenderer);
 
     SDL_GL_SetSwapInterval(0);
     SDL_Event e;
@@ -134,7 +132,29 @@ void WebViewApp::Render(MFA::RT::CommandRecordState & recordState)
 
 void WebViewApp::Resize()
 {
+    Reload();
+}
 
+//=============================================================
+
+void WebViewApp::OnSDL_Event(SDL_Event* event)
+{
+    if (event->type == SDL_KEYDOWN)
+    {
+        if (event->key.keysym.sym == SDLK_F5) 
+        {
+            Reload();
+        }
+    }
+}
+
+//=============================================================
+
+void WebViewApp::Reload()
+{
+    // TODO: Reload shaders too
+    RB::DeviceWaitIdle(LogicalDevice::Instance->GetVkDevice());
+    _webViewContainer = std::make_unique<WebViewContainer>(_lineRenderer, _fontRenderer, _solidFillRenderer);
 }
 
 //=============================================================

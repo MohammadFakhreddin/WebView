@@ -19,22 +19,22 @@ float DistanceFromLine(float2 screenPos, float2 linePos0, float2 linePos1)
 {
     float2 screenVec = screenPos - linePos0;
     float2 lineVec = normalize(linePos1 - linePos0);
-    float dist = screenVec - dot(screenVec, lineVec);
+    float dist = length(screenVec) - dot(screenVec, lineVec);
     return abs(dist);
 }
 
 float4 main(Input input) : SV_TARGET
 {
-    float dist0 = DistanceFromLine(input.screenPos, input.innerPos0, input.innerPos1);
-    float dist1 = DistanceFromLine(input.screenPos, input.innerPos1, input.innerPos2);
-    float dist2 = DistanceFromLine(input.screenPos, input.innerPos2, input.innerPos3);
-    float dist3 = DistanceFromLine(input.screenPos, input.innerPos3, input.innerPos0);
+    // float dist0 = DistanceFromLine(input.screenPos, input.innerPos0, input.innerPos1);
+    // float dist1 = DistanceFromLine(input.screenPos, input.innerPos1, input.innerPos2);
+    // float dist2 = DistanceFromLine(input.screenPos, input.innerPos2, input.innerPos3);
+    // float dist3 = DistanceFromLine(input.screenPos, input.innerPos3, input.innerPos0);
 
-    float radius = input.borderRadius;
-    if (dist0 > radius && dist1 > radius && dist2 > radius && dist3 > radius)
-    {
-        discard;
-    }
+    // float radius = input.borderRadius;
+    // if (dist0 > radius && dist1 > radius && dist2 > radius && dist3 > radius)
+    // {
+    //     discard;
+    // }
 
     return float4(input.color, 1.0);
 }

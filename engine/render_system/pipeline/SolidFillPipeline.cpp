@@ -108,7 +108,7 @@ namespace MFA
 		inputAttributeDescriptions.emplace_back(VkVertexInputAttributeDescription{
 			.location = static_cast<uint32_t>(inputAttributeDescriptions.size()),
 			.binding = 0,
-			.format = VK_FORMAT_R32G32B32_SFLOAT,
+			.format = VK_FORMAT_R32G32_SFLOAT,
 			.offset = offsetof(Vertex, position),
 		});
 		// Color
@@ -121,63 +121,35 @@ namespace MFA
 		// InnerPos0
 		inputAttributeDescriptions.emplace_back(VkVertexInputAttributeDescription{
 			.location = static_cast<uint32_t>(inputAttributeDescriptions.size()),
-			.binding = 0,
-			.format = VK_FORMAT_R32G32B32_SFLOAT,
+			.binding = 1,
+			.format = VK_FORMAT_R32G32_SFLOAT,
 			.offset = offsetof(Instance, innerPos0)
-		});
-		// Color0
-		inputAttributeDescriptions.emplace_back(VkVertexInputAttributeDescription{
-			.location = static_cast<uint32_t>(inputAttributeDescriptions.size()),
-			.binding = 0,
-			.format = VK_FORMAT_R32G32B32_SFLOAT,
-			.offset = offsetof(Instance, color0)
 		});
 		// InnerPos1
 		inputAttributeDescriptions.emplace_back(VkVertexInputAttributeDescription{
 			.location = static_cast<uint32_t>(inputAttributeDescriptions.size()),
-			.binding = 0,
-			.format = VK_FORMAT_R32G32B32_SFLOAT,
+			.binding = 1,
+			.format = VK_FORMAT_R32G32_SFLOAT,
 			.offset = offsetof(Instance, innerPos1)
-		});
-		// Color1
-		inputAttributeDescriptions.emplace_back(VkVertexInputAttributeDescription{
-			.location = static_cast<uint32_t>(inputAttributeDescriptions.size()),
-			.binding = 0,
-			.format = VK_FORMAT_R32G32B32_SFLOAT,
-			.offset = offsetof(Instance, color1)
 		});
 		// InnerPos2
 		inputAttributeDescriptions.emplace_back(VkVertexInputAttributeDescription{
 			.location = static_cast<uint32_t>(inputAttributeDescriptions.size()),
-			.binding = 0,
-			.format = VK_FORMAT_R32G32B32_SFLOAT,
+			.binding = 1,
+			.format = VK_FORMAT_R32G32_SFLOAT,
 			.offset = offsetof(Instance, innerPos2)
-		});
-		// Color2
-		inputAttributeDescriptions.emplace_back(VkVertexInputAttributeDescription{
-			.location = static_cast<uint32_t>(inputAttributeDescriptions.size()),
-			.binding = 0,
-			.format = VK_FORMAT_R32G32B32_SFLOAT,
-			.offset = offsetof(Instance, color2)
 		});
 		// InnerPos3
 		inputAttributeDescriptions.emplace_back(VkVertexInputAttributeDescription{
 			.location = static_cast<uint32_t>(inputAttributeDescriptions.size()),
-			.binding = 0,
-			.format = VK_FORMAT_R32G32B32_SFLOAT,
+			.binding = 1,
+			.format = VK_FORMAT_R32G32_SFLOAT,
 			.offset = offsetof(Instance, innerPos3)
-		});
-		// Color3
-		inputAttributeDescriptions.emplace_back(VkVertexInputAttributeDescription{
-			.location = static_cast<uint32_t>(inputAttributeDescriptions.size()),
-			.binding = 0,
-			.format = VK_FORMAT_R32G32B32_SFLOAT,
-			.offset = offsetof(Instance, color3)
 		});
 		// BorderRadius
 		inputAttributeDescriptions.emplace_back(VkVertexInputAttributeDescription{
 			.location = static_cast<uint32_t>(inputAttributeDescriptions.size()),
-			.binding = 0,
+			.binding = 1,
 			.format = VK_FORMAT_R32_SFLOAT,
 			.offset = offsetof(Instance, borderRadius)
 		});

@@ -41,6 +41,7 @@ WebViewContainer::WebViewContainer(
 
 	_html->render(clip.width);
 	_html->draw(0, 0, 0, &clip);
+	// TODO: We have to redraw after resize
 }
 
 //=========================================================================================
@@ -100,7 +101,7 @@ litehtml::uint_ptr WebViewContainer::create_font(
 	litehtml::font_metrics* fm
 )
 {
-	fm->height = static_cast<int>(_fontRenderer->TextHeight() * MFA::LogicalDevice::Instance->GetWindowHeight());
+	fm->height = static_cast<int>(_fontRenderer->TextHeight() * MFA::LogicalDevice::Instance->GetWindowHeight()) * 0.5f;
 	fm->draw_spaces = false;
 	return 1;
 }
@@ -243,7 +244,7 @@ void WebViewContainer::draw_solid_fill(
 		color1, 
 		color2, 
 		color3,
-		layer.border_radius.bottom_left_x // TODO: Each of them need a border radius
+		static_cast<float>(layer.border_radius.bottom_left_x) / windowWidth // TODO: Each of them need a border radius
 	);
 	_solidFillBuffers.emplace_back(bufferTracker);
 
@@ -267,7 +268,8 @@ void WebViewContainer::draw_text(
 
 	FontRenderer::TextParams textParams{};
 	textParams.color = ConvertColor(color);
-	textParams.hTextAlign = MFA::ConsolasFontRenderer::HorizontalTextAlign::Left;
+	textParams.hTextAlign = FontRenderer::HorizontalTextAlign::Left;
+	textParams.vTextAlign = FontRenderer::VerticalTextAlign::Top;
 	
 	float x = pos.x;
 	float y = pos.y;
