@@ -1,11 +1,12 @@
 #pragma once
 
 #include "utils/ConsolasFontRenderer.hpp"
-
-#include "litehtml.h"
 #include "pipeline/SolidFillPipeline.hpp"
 #include "utils/LineRenderer.hpp"
 #include "utils/SolidFillRenderer.hpp"
+
+// #include "gumbo.h"
+#include "litehtml.h"
 
 
 class WebViewContainer : public litehtml::document_container
@@ -19,6 +20,7 @@ public:
 
 	// TODO: We need an image renderer class as well
 	explicit WebViewContainer(
+		std::shared_ptr<MFA::Blob> const & htmlBlob,
 		std::shared_ptr<LineRenderer> lineRenderer,
 		std::shared_ptr<FontRenderer> fontRenderer,
 		std::shared_ptr<SolidFillRenderer> solidFillRenderer
@@ -144,13 +146,23 @@ protected:
 
 private:
 
+	[[nodiscard]]
 	static glm::vec3 ConvertColor(litehtml::web_color const & webColor);
+
+	// https://github.com/stephenmathieson/gumbo-get-element-by-id.c/tree/master
+	// [[nodiscard]]
+	// static GumboNode * GetElementById(const char *id, GumboNode *document);
+
+	// bool ParseHTML(std::string & string);
+
+	static litehtml::element::ptr GetElementById(char const * id, litehtml::element::ptr element);
 
 	std::shared_ptr<FontRenderer> _fontRenderer = nullptr;
 	std::shared_ptr<LineRenderer> _lineRenderer = nullptr;
 	std::shared_ptr<SolidFillRenderer> _solidFillRenderer = nullptr;
 
 	litehtml::document::ptr _html = nullptr;
+	GumboOutput * _gumboOutput = nullptr;
 
 	std::vector<std::shared_ptr<FontRenderer::TextData>> _textDataList{};
 	std::vector<std::shared_ptr<MFA::LocalBufferTracker>> _solidFillBuffers{};
