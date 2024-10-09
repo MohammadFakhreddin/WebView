@@ -4,6 +4,7 @@ struct Input
     [[vk::location(0)]] float2 position : POSITION0;
     [[vk::location(1)]] float3 color : COLOR;
     // Per instance
+    // TODO: Add border radius per element
     [[vk::location(2)]] float2 position0;
     [[vk::location(3)]] float2 position1;
     [[vk::location(4)]] float2 position2;

@@ -41,6 +41,7 @@ WebViewContainer::WebViewContainer(
 
 	_html->render(clip.width);
 	_html->draw(0, 0, 0, &clip);
+
 }
 
 //=========================================================================================

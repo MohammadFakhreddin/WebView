@@ -74,14 +74,16 @@ namespace MFA
         auto const windowWidth = static_cast<float>(LogicalDevice::Instance->GetWindowWidth());
         auto const windowHeight = static_cast<float>(LogicalDevice::Instance->GetWindowHeight());
 
+        auto const windowMin = std::min(windowWidth, windowHeight);
+
         int letterRange = inOutData.letterRange.empty() == false ? inOutData.letterRange.back() : 0;
         int letterRangeBegin = letterRange;
 
         auto * mapped = &reinterpret_cast<TextOverlayPipeline::Vertex*>(inOutData.vertexData->Data())[letterRange * 4];
         auto* mappedBegin = mapped;
 
-        const float charW = WidthModifier * params.scale / windowWidth;
-        const float charH = HeightModifier * params.scale / windowWidth;
+        const float charW = WidthModifier * params.scale / windowMin;
+        const float charH = HeightModifier * params.scale / windowMin;
 
         float fbW = windowWidth;
         float fbH = windowHeight;
@@ -216,7 +218,10 @@ namespace MFA
     float ConsolasFontRenderer::TextWidth(std::string_view const& text, TextParams params)
     {
         auto const windowWidth = static_cast<float>(LogicalDevice::Instance->GetWindowWidth());
-        const float charW = WidthModifier * params.scale / windowWidth;
+        auto const windowHeight = static_cast<float>(LogicalDevice::Instance->GetWindowHeight());
+        auto const windowMin = std::min(windowWidth, windowHeight);
+
+        const float charW = WidthModifier * params.scale / windowMin;
 
         float textWidth = 0;
         for (auto letter : text)
@@ -237,7 +242,10 @@ namespace MFA
     float ConsolasFontRenderer::TextHeight(float const textScale) const
     {
         auto const windowWidth = static_cast<float>(LogicalDevice::Instance->GetWindowWidth());
-        const float charH = HeightModifier * textScale / windowWidth;
+        auto const windowHeight = static_cast<float>(LogicalDevice::Instance->GetWindowHeight());
+        auto const windowMin = std::min(windowWidth, windowHeight);
+
+    	const float charH = HeightModifier * textScale / windowMin;
         return charH * _fontHeight;
     }
 

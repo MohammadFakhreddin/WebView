@@ -1,7 +1,6 @@
 #pragma once
 
 #include "utils/ConsolasFontRenderer.hpp"
-
 #include "litehtml.h"
 #include "pipeline/SolidFillPipeline.hpp"
 #include "utils/LineRenderer.hpp"
