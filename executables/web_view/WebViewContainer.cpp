@@ -1,7 +1,5 @@
 #include "WebViewContainer.hpp"
 
-#include "BedrockFile.hpp"
-#include "BedrockPath.hpp"
 #include "ImportGLTF.hpp"
 #include "LogicalDevice.hpp"
 #include "RenderBackend.hpp"
@@ -9,8 +7,9 @@
 #include <ranges>
 
 //=========================================================================================
-
+// TODO: Create class that extends from this class for specific tasks
 WebViewContainer::WebViewContainer(
+	std::shared_ptr<MFA::Blob> const & htmlBlob,
 	std::shared_ptr<LineRenderer> lineRenderer,
 	std::shared_ptr<FontRenderer> fontRenderer,
 	std::shared_ptr<SolidFillRenderer> solidFillRenderer
@@ -20,28 +19,55 @@ WebViewContainer::WebViewContainer(
 	, _lineRenderer(std::move(lineRenderer))
 	, _solidFillRenderer(std::move(solidFillRenderer))
 {
-	auto * path = MFA::Path::Instance;
-	auto htmlPath = path->Get("web_view/Test.html");
-	set_base_url(htmlPath.c_str());
-	auto const blob = MFA::File::Read(htmlPath);
-	char const * htmlText = blob->As<char const>();
+	// TODO: We can use createFromString functionality
+	char const * htmlText = htmlBlob->As<char const>();
+
+	//std::string text = htmlText;
+	//auto replaceAll = [](std::string& s, std::string o, std::string n) {  s.replace(s.find(o), o.size(), n); };
+
+	//std::string search = "center-column button";
+	//std::string replace = "center-column button selected";
+	//replaceAll(text, search, replace);
+	//text.replace("id=\"new - game\" class=\"center - column button\"", "id=\"new - game\" class=\"center - column button selected\"");
 	_html = litehtml::document::createFromString(
-		htmlText, 
+		htmlText,
 		this
 	);
-	MFA_ASSERT(_html != nullptr);
+	//MFA_ASSERT(_html != nullptr);
+	
+	auto root = _html->root();
+	
+	//auto newGameButton = GetElementById("new-game", root);
+	//MFA_ASSERT(newGameButton != nullptr);
+	//std::string classAttr = newGameButton->get_attr("class");
+	//classAttr = classAttr.append(" selected");
+	//MFA_LOG_INFO("Class attr: %s", classAttr.c_str());
+	//newGameButton->set_attr("class", classAttr.c_str());
+	//newGameButton->parse_attributes();
+	//newGameButton->compute_styles();
 
+	/*litehtml::position::vector reDraw {};
+	_html->root()->find_styles_changes(reDraw);
+	*/
 	auto* device = MFA::LogicalDevice::Instance;
-
+	
 	litehtml::position clip{};
 	clip.width = device->GetWindowWidth();
 	clip.height = device->GetWindowHeight();
 	clip.x = 0;
 	clip.y = 0;
 
-	_html->render(clip.width);
-	_html->draw(0, 0, 0, &clip);
+	// _html->draw(0, clip.x, clip.y, &clip);
+	_html->render(clip.width, litehtml::render_all);
+	_html->draw(0, clip.x, clip.y, &clip);
 
+	// clip.width = device->GetWindowWidth() * 0.5f;
+	// clip.height = device->GetWindowHeight();
+	// clip.x = device->GetWindowWidth() * 0.5f;
+	// clip.y = 0;
+
+	// _html->render(clip.width);
+	// _html->draw(1, clip.x, clip.y, &clip);
 }
 
 //=========================================================================================
@@ -173,7 +199,13 @@ void WebViewContainer::draw_image(
 	const std::string& base_url
 )
 {
-
+	MFA_LOG_INFO(
+		"url=%s, base_url=%s, layer.width: %d, layer.height: %d"
+		, url.c_str()
+		, base_url.c_str()
+		, layer.border_box.width
+		, layer.border_box.height
+	);
 }
 
 //=========================================================================================
@@ -302,7 +334,6 @@ void WebViewContainer::get_client_rect(litehtml::position& client) const
 
 const char* WebViewContainer::get_default_font_name() const
 {
-	// TODO
 	return "consolos";
 }
 
@@ -310,7 +341,6 @@ const char* WebViewContainer::get_default_font_name() const
 
 int WebViewContainer::get_default_font_size() const
 {
-	// TODO
 	return 14;
 }
 
@@ -318,6 +348,9 @@ int WebViewContainer::get_default_font_size() const
 
 void WebViewContainer::get_image_size(const char* src, const char* baseurl, litehtml::size& sz)
 {
+	MFA_LOG_INFO("src: %s, baseurl: %s", src, baseurl);
+	sz.width = 100;
+	sz.height = 100;
 }
 
 //=========================================================================================
@@ -348,6 +381,7 @@ void WebViewContainer::link(const std::shared_ptr<litehtml::document>& doc, cons
 
 void WebViewContainer::load_image(const char* src, const char* baseurl, bool redraw_on_ready)
 {
+	MFA_LOG_INFO("src: %s, baseurl: %s", src, baseurl);
 }
 
 //=========================================================================================
@@ -422,5 +456,152 @@ glm::vec3 WebViewContainer::ConvertColor(litehtml::web_color const& webColor)
 		static_cast<float>(webColor.blue) / 255.0f
 	};
 }
+
+//=========================================================================================
+
+litehtml::element::ptr WebViewContainer::GetElementById(char const * targetId, litehtml::element::ptr element)
+{
+	auto const * elementId = element->get_attr("id");
+	if (elementId != nullptr && strcmp(elementId, targetId) == 0)
+	{
+		return element;
+	}
+
+	for (auto & child : element->children())
+	{
+		auto result = GetElementById(targetId, child);
+		if (result != nullptr)
+		{
+			return result;
+		}
+	}
+
+	return nullptr;
+}
+
+// GumboNode * WebViewContainer::GetElementById(const char *id, GumboNode * document) 
+// {
+
+// 	if (GUMBO_NODE_DOCUMENT != document->type && GUMBO_NODE_ELEMENT != document->type) 
+// 	{
+// 		return nullptr;
+// 	}
+
+// 	GumboAttribute *node_id =
+// 	gumbo_get_attribute(&document->v.element.attributes, "id");
+// 	if (node_id && 0 == strcmp(id, node_id->value)) 
+// 	{
+// 		return document;
+// 	}
+
+// 	// iterate all children
+// 	GumboVector *children = &document->v.element.children;
+// 	for (unsigned int i = 0; i < children->length; i++) 
+// 	{
+// 		GumboNode *node = GetElementById(id, (GumboNode *)children->data[i]);
+// 		if (node) return node;
+// 	}
+
+// 	return nullptr;
+// }
+
+//=========================================================================================
+
+// bool WebViewContainer::ParseHTML(std::string & string)
+// {
+// 	if (_gumboOutput != nullptr)
+// 	{
+// 		gumbo_destroy_output(&kGumboDefaultOptions, _gumboOutput);
+// 	}
+
+// 	// Create litehtml::document
+// 	_html = make_shared<litehtml::document>(this);
+
+// 	// Parse document into GumboOutput
+// 	GumboOutput* output = _html->parse_html(string);
+
+// 	// mode must be set before doc->create_node because it is used in html_tag::set_attr
+// 	switch (output->document->v.document.doc_type_quirks_mode)
+// 	{
+// 	case GUMBO_DOCTYPE_NO_QUIRKS:      doc->m_mode = no_quirks_mode;      break;
+// 	case GUMBO_DOCTYPE_QUIRKS:         doc->m_mode = quirks_mode;         break;
+// 	case GUMBO_DOCTYPE_LIMITED_QUIRKS: doc->m_mode = limited_quirks_mode; break;
+// 	}
+
+// 	// Create litehtml::elements.
+// 	elements_list root_elements;
+// 	doc->create_node(output->root, root_elements, true);
+// 	if (!root_elements.empty())
+// 	{
+// 		doc->m_root = root_elements.back();
+// 	}
+
+// 	// Destroy GumboOutput
+// 	gumbo_destroy_output(&kGumboDefaultOptions, output);
+
+// 	if (master_styles != "")
+// 	{
+// 		doc->m_master_css.parse_css_stylesheet(master_styles, "", doc);
+// 		doc->m_master_css.sort_selectors();
+// 	}
+// 	if (user_styles != "")
+// 	{
+// 		doc->m_user_css.parse_css_stylesheet(user_styles, "", doc);
+// 		doc->m_user_css.sort_selectors();
+// 	}
+
+// 	// Let's process created elements tree
+// 	if (doc->m_root)
+// 	{
+// 		doc->container()->get_media_features(doc->m_media);
+
+// 		doc->m_root->set_pseudo_class(_root_, true);
+
+// 		// apply master CSS
+// 		doc->m_root->apply_stylesheet(doc->m_master_css);
+
+// 		// parse elements attributes
+// 		doc->m_root->parse_attributes();
+
+// 		// parse style sheets linked in document
+// 		for (const auto& css : doc->m_css)
+// 		{
+// 			media_query_list_list::ptr media;
+// 			if (css.media != "")
+// 			{
+// 				auto mq_list = parse_media_query_list(css.media, doc);
+// 				media = make_shared<media_query_list_list>();
+// 				media->add(mq_list);
+// 			}
+// 			doc->m_styles.parse_css_stylesheet(css.text, css.baseurl, doc, media);
+// 		}
+// 		// Sort css selectors using CSS rules.
+// 		doc->m_styles.sort_selectors();
+
+// 		// Apply media features.
+// 		doc->update_media_lists(doc->m_media);
+
+// 		// Apply parsed styles.
+// 		doc->m_root->apply_stylesheet(doc->m_styles);
+
+// 		// Apply user styles if any
+// 		doc->m_root->apply_stylesheet(doc->m_user_css);
+
+// 		// Initialize element::m_css
+// 		doc->m_root->compute_styles();
+
+// 		// Create rendering tree
+// 		doc->m_root_render = doc->m_root->create_render_item(nullptr);
+
+// 		// Now the m_tabular_elements is filled with tabular elements.
+// 		// We have to check the tabular elements for missing table elements 
+// 		// and create the anonymous boxes in visual table layout
+// 		doc->fix_tables_layout();
+
+// 		// Finally initialize elements
+// 		// init() returns pointer to the render_init element because it can change its type
+// 		doc->m_root_render = doc->m_root_render->init();
+// 	}
+// }
 
 //=========================================================================================

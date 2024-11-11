@@ -24,6 +24,8 @@ private:
 
 	void Reload();
 
+	void InstantiateWebViewContainer();
+
 	std::shared_ptr<MFA::DisplayRenderPass> _displayRenderPass;
 	std::unique_ptr<WebViewContainer> _webViewContainer;
 

@@ -3,6 +3,8 @@
 #include "LogicalDevice.hpp"
 #include "Time.hpp"
 #include "WebViewContainer.hpp"
+#include "BedrockFile.hpp"
+#include "BedrockPath.hpp"
 
 using namespace MFA;
 
@@ -55,7 +57,7 @@ void WebViewApp::Run()
     auto const solidFillPipeline = std::make_shared<SolidFillPipeline>(_displayRenderPass);
     _solidFillRenderer = std::make_shared<SolidFillRenderer>(solidFillPipeline);
 
-    _webViewContainer = std::make_unique<WebViewContainer>(_lineRenderer, _fontRenderer, _solidFillRenderer);
+    InstantiateWebViewContainer();
 
     SDL_GL_SetSwapInterval(0);
     SDL_Event e;
@@ -154,7 +156,17 @@ void WebViewApp::Reload()
 {
     // TODO: Reload shaders too
     RB::DeviceWaitIdle(LogicalDevice::Instance->GetVkDevice());
-    _webViewContainer = std::make_unique<WebViewContainer>(_lineRenderer, _fontRenderer, _solidFillRenderer);
+    InstantiateWebViewContainer();
+}
+
+//=============================================================
+
+void WebViewApp::InstantiateWebViewContainer()
+{
+    auto * path = Path::Instance;
+	auto htmlPath = path->Get("web_view/Test.html");
+	auto const htmlBlob = File::Read(htmlPath);    
+    _webViewContainer = std::make_unique<WebViewContainer>(htmlBlob, _lineRenderer, _fontRenderer, _solidFillRenderer);
 }
 
 //=============================================================
