@@ -19,36 +19,26 @@ WebViewContainer::WebViewContainer(
 	, _lineRenderer(std::move(lineRenderer))
 	, _solidFillRenderer(std::move(solidFillRenderer))
 {
-	// TODO: We can use createFromString functionality
 	char const * htmlText = htmlBlob->As<char const>();
 
-	//std::string text = htmlText;
-	//auto replaceAll = [](std::string& s, std::string o, std::string n) {  s.replace(s.find(o), o.size(), n); };
-
-	//std::string search = "center-column button";
-	//std::string replace = "center-column button selected";
-	//replaceAll(text, search, replace);
-	//text.replace("id=\"new - game\" class=\"center - column button\"", "id=\"new - game\" class=\"center - column button selected\"");
 	_html = litehtml::document::createFromString(
 		htmlText,
 		this
 	);
-	//MFA_ASSERT(_html != nullptr);
 	
 	auto root = _html->root();
 	
-	//auto newGameButton = GetElementById("new-game", root);
-	//MFA_ASSERT(newGameButton != nullptr);
-	//std::string classAttr = newGameButton->get_attr("class");
-	//classAttr = classAttr.append(" selected");
-	//MFA_LOG_INFO("Class attr: %s", classAttr.c_str());
-	//newGameButton->set_attr("class", classAttr.c_str());
-	//newGameButton->parse_attributes();
-	//newGameButton->compute_styles();
+	auto newGameButton = GetElementById("new-game", root);
 
-	/*litehtml::position::vector reDraw {};
-	_html->root()->find_styles_changes(reDraw);
-	*/
+	std::string classAttr = newGameButton->get_attr("class");
+	classAttr = classAttr.append(" selected");
+
+	newGameButton->set_attr("class", classAttr.c_str());
+	newGameButton->apply_stylesheet(_html->m_styles);
+	newGameButton->refresh_styles();
+
+	newGameButton->compute_styles();
+	
 	auto* device = MFA::LogicalDevice::Instance;
 	
 	litehtml::position clip{};
@@ -57,17 +47,9 @@ WebViewContainer::WebViewContainer(
 	clip.x = 0;
 	clip.y = 0;
 
-	// _html->draw(0, clip.x, clip.y, &clip);
 	_html->render(clip.width, litehtml::render_all);
+
 	_html->draw(0, clip.x, clip.y, &clip);
-
-	// clip.width = device->GetWindowWidth() * 0.5f;
-	// clip.height = device->GetWindowHeight();
-	// clip.x = device->GetWindowWidth() * 0.5f;
-	// clip.y = 0;
-
-	// _html->render(clip.width);
-	// _html->draw(1, clip.x, clip.y, &clip);
 }
 
 //=========================================================================================
@@ -299,6 +281,7 @@ void WebViewContainer::draw_text(
 	const litehtml::position& pos
 )
 {
+	// We can also use ImGui Draw text
 	std::shared_ptr textData = _fontRenderer->AllocateTextData();
 
 	FontRenderer::TextParams textParams{};
