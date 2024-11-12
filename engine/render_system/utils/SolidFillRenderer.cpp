@@ -38,7 +38,7 @@ std::shared_ptr<MFA::LocalBufferTracker> MFA::SolidFillRenderer::AllocateBuffer(
 	};
 
 	auto const * device = LogicalDevice::Instance;
-
+	// This should be 1
 	int const bufferCount = device->GetMaxFramePerFlight();
 
 	auto vertexBuffer = RB::CreateBufferGroup(

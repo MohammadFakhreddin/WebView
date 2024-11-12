@@ -10,7 +10,3 @@
 	path = submodules/Vulkan-Loader
 	url = https://github.com/KhronosGroup/Vulkan-Loader.git
 	branch = sdk-1.3.261
-[submodule "submodules/litehtml"]
-	path = submodules/litehtml
-	url = https://github.com/litehtml/litehtml.git
-	branch = master

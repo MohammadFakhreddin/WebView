@@ -288,7 +288,8 @@ namespace MFA::RenderBackend
             windowWidth, windowHeight,
             SDL_WINDOW_SHOWN /*| SDL_WINDOW_FULLSCREEN */ | SDL_WINDOW_VULKAN
         );
-        SDL_CheckForError();
+        MFA_ASSERT(window != nullptr);
+        // SDL_CheckForError();
         return window;
     }
 
