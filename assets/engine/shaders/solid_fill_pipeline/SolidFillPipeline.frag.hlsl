@@ -1,14 +1,18 @@
 struct Input
 {
     [[vk::location(0)]] float2 screenPos : POSITION0;
-    [[vk::location(1)]] float3 color : COLOR;
+    [[vk::location(1)]] float4 color : COLOR;
 
-    [[vk::location(2)]] float2 topLeft;
-    [[vk::location(3)]] float2 bottomLeft;
-    [[vk::location(4)]] float2 topRight;
-    [[vk::location(5)]] float2 bottomRight;
+    [[vk::location(2)]] float2 topLeftInnerPos;
+    [[vk::location(3)]] float2 bottomLeftInnerPos;
+    [[vk::location(4)]] float2 topRightInnerPos;
+    [[vk::location(5)]] float2 bottomRightInnerPos;
 
-    [[vk::location(6)]] float borderRadius;
+    [[vk::location(6)]] float topLeftRadius;
+    [[vk::location(7)]] float bottomLeftRadius;
+    [[vk::location(8)]] float topRightRadius;
+    [[vk::location(9)]] float bottomRightRadius;
+
 };
 
 struct Output
@@ -23,40 +27,41 @@ float Distance(float2 pos0, float2 pos1)
 
 float4 main(Input input) : SV_TARGET
 {
-    if (input.screenPos.x < input.topLeft.x)
+    float a = input.color.a;
+    if (input.screenPos.x < input.topLeftInnerPos.x)
     {
-        if (input.screenPos.y < input.topLeft.y)
+        if (input.screenPos.y < input.topLeftInnerPos.y)
         {
-            if (Distance(input.screenPos, input.topLeft) > input.borderRadius)
+            if (Distance(input.screenPos, input.topLeftInnerPos) > input.topLeftRadius)
             {
                 discard;
             }
         }
-        else if (input.screenPos.y > input.bottomLeft.y)
+        else if (input.screenPos.y > input.bottomLeftInnerPos.y)
         {
-            if (Distance(input.screenPos, input.bottomLeft) > input.borderRadius)
+            if (Distance(input.screenPos, input.bottomLeftInnerPos) > input.bottomLeftRadius)
             {
                 discard;
             }
         }
     }
-    if (input.screenPos.x > input.topRight.x)
+    if (input.screenPos.x > input.topRightInnerPos.x)
     {
-        if (input.screenPos.y < input.topRight.y)
+        if (input.screenPos.y < input.topRightInnerPos.y)
         {
-            if (Distance(input.screenPos, input.topRight) > input.borderRadius)
+            if (Distance(input.screenPos, input.topRightInnerPos) > input.topRightRadius)
             {
                 discard;
             }
         }
-        else if (input.screenPos.y > input.bottomRight.y)
+        else if (input.screenPos.y > input.bottomRightInnerPos.y)
         {
-            if (Distance(input.screenPos, input.bottomRight) > input.borderRadius)
+            if (Distance(input.screenPos, input.bottomRightInnerPos) > input.bottomRightRadius)
             {
                 discard;
             }
         }
     }
 
-    return float4(input.color, 1.0);
+    return input.color;
 }

@@ -20,6 +20,7 @@ public:
 	// TODO: We need an image renderer class as well
 	explicit WebViewContainer(
 		std::shared_ptr<MFA::Blob> const & htmlBlob,
+		litehtml::position clip,
 		std::shared_ptr<LineRenderer> lineRenderer,
 		std::shared_ptr<FontRenderer> fontRenderer,
 		std::shared_ptr<SolidFillRenderer> solidFillRenderer
@@ -32,6 +33,14 @@ public:
 	void UpdateBuffers(const MFA::RT::CommandRecordState& recordState);
 
 	void DisplayPass(MFA::RT::CommandRecordState& recordState);
+
+	[[nodiscard]]
+	litehtml::element::ptr GetElementById(char const * id);
+
+	[[nodiscard]]
+	static litehtml::element::ptr GetElementById(char const * id, litehtml::element::ptr element);
+
+	void InvalidateStyles(litehtml::element::ptr element);
 	
 protected:
 
@@ -146,10 +155,9 @@ protected:
 private:
 
 	[[nodiscard]]
-	static glm::vec3 ConvertColor(litehtml::web_color const & webColor);
+	static glm::vec4 ConvertColor(litehtml::web_color const & webColor);
 
-	static litehtml::element::ptr GetElementById(char const * id, litehtml::element::ptr element);
-
+	litehtml::position _clip {};
 	std::shared_ptr<FontRenderer> _fontRenderer = nullptr;
 	std::shared_ptr<LineRenderer> _lineRenderer = nullptr;
 	std::shared_ptr<SolidFillRenderer> _solidFillRenderer = nullptr;
@@ -162,5 +170,7 @@ private:
 	std::vector<std::function<void(MFA::RT::CommandRecordState&)>> _drawCalls{};
 
 	std::vector<float> _fontScales{};
+
+	bool _isDirty = true;
 
 };

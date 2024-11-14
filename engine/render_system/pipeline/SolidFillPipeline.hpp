@@ -1,7 +1,6 @@
 #pragma once
 
 #include "RenderTypes.hpp"
-
 #include "render_pass/DisplayRenderPass.hpp"
 
 #include <glm/glm.hpp>
@@ -13,29 +12,34 @@ namespace MFA
     public:
 
         using Position = glm::vec2;
-        using Color = glm::vec3;
+        using Radius = float;
+        using Color = glm::vec4;
 
         struct Vertex
         {
             Position position{};
+            Radius borderRadius{};
             Color color{};
         };
 
         struct Instance
         {
-            Position innerPos0{};
-            Color color0{};
+            Position topLeftPos{};
+        	Radius topLeftRadius{};
+            Color topLeftColor{};
 
-            Position innerPos1{};
-            Color color1{};
+            Position bottomLeftPos{};
+            Radius bottomLeftRadius{};
+            Color bottomLeftColor{};
 
-            Position innerPos2{};
-            Color color2{};
+            Position topRightPos{};
+            Radius topRightRadius{};
+            Color topRightColor{};
 
-            Position innerPos3{};
-            Color color3{};
+            Position bottomRightPos{};
+            Radius bottomRightRadius{};
+            Color bottomRightColor{};
 
-        	float borderRadius{};
         };
 
         explicit SolidFillPipeline(std::shared_ptr<DisplayRenderPass> displayRenderPass);

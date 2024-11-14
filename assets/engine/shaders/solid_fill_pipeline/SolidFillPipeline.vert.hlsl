@@ -2,15 +2,19 @@ struct Input
 {
     // Per vertex
     [[vk::location(0)]] float2 position : POSITION0;
-    [[vk::location(1)]] float3 color : COLOR;
+    [[vk::location(1)]] float4 color : COLOR;
     // Per instance
-    // TODO: Add border radius per element
-    [[vk::location(2)]] float2 position0;
-    [[vk::location(3)]] float2 position1;
-    [[vk::location(4)]] float2 position2;
-    [[vk::location(5)]] float2 position3;
-    
-    [[vk::location(6)]] float borderRadius;
+    [[vk::location(2)]] float2 topLeftPos;
+    [[vk::location(3)]] float topLeftRadius;
+
+    [[vk::location(4)]] float2 bottomLeftPos;
+    [[vk::location(5)]] float bottomLeftRadius;
+
+    [[vk::location(6)]] float2 topRightPos;
+    [[vk::location(7)]] float topRightRadius;
+
+    [[vk::location(8)]] float2 bottomRightPos;
+    [[vk::location(9)]] float bottomRightRadius;
 };
 
 struct Output
@@ -18,14 +22,17 @@ struct Output
     float4 position : SV_POSITION;
 
     [[vk::location(0)]] float2 screenPos : POSITION0;
-    [[vk::location(1)]] float3 color : COLOR;
+    [[vk::location(1)]] float4 color : COLOR;
 
-    [[vk::location(2)]] float2 topLeft;
-    [[vk::location(3)]] float2 bottomLeft;
-    [[vk::location(4)]] float2 topRight;
-    [[vk::location(5)]] float2 bottomRight;
+    [[vk::location(2)]] float2 topLeftInnerPos;
+    [[vk::location(3)]] float2 bottomLeftInnerPos;
+    [[vk::location(4)]] float2 topRightInnerPos;
+    [[vk::location(5)]] float2 bottomRightInnerPos;
 
-    [[vk::location(6)]] float borderRadius;
+    [[vk::location(6)]] float topLeftRadius;
+    [[vk::location(7)]] float bottomLeftRadius;
+    [[vk::location(8)]] float topRightRadius;
+    [[vk::location(9)]] float bottomRightRadius;
 }
 
 Output main(Input input)
@@ -38,17 +45,28 @@ Output main(Input input)
     output.screenPos = position.xy;
     output.color = input.color;
 
-    float2 center = (input.position0 + input.position1 + input.position2 + input.position3) * 0.25;
-    
-    float halfWidth = abs(input.position0.x - center.x) - input.borderRadius;
-    float halfHeight = abs(input.position0.y - center.y) - input.borderRadius;
+    float2 center = (input.topLeftPos + input.bottomLeftPos + input.topRightPos + input.bottomRightPos) * 0.25;
+    float2 maxDiff = input.bottomRightPos - center;
 
-    output.topLeft = float2(center.x - halfWidth, center.y - halfHeight);
-    output.bottomLeft = float2(center.x - halfWidth, center.y + halfHeight);
-    output.topRight = float2(center.x + halfWidth, center.y - halfHeight);
-    output.bottomRight = float2(center.x + halfWidth, center.y + halfHeight);
+    float topLeftRadiusX = min(maxDiff.x, input.topLeftRadius);
+    float topLeftRadiusY = min(maxDiff.y, input.topLeftRadius);
+    float bottomLeftRadiusX = min(maxDiff.x, input.bottomLeftRadius);
+    float bottomLeftRadiusY = min(maxDiff.y, input.bottomLeftRadius);
+    float topRightRadiusX = min(maxDiff.x, input.topRightRadius);
+    float topRightRadiusY = min(maxDiff.y, input.topRightRadius);
+    float bottomRightRadiusX = min(maxDiff.x, input.bottomRightRadius);
+    float bottomRightRadiusY = min(maxDiff.y, input.bottomRightRadius);
 
-    output.borderRadius = input.borderRadius;
-    
+    // This is probably why they have separated radius into x and y component
+    output.topLeftInnerPos = input.topLeftPos + float2(topLeftRadiusX, topLeftRadiusY);
+    output.bottomLeftInnerPos = input.bottomLeftPos + float2(bottomLeftRadiusX, -bottomLeftRadiusY);
+    output.topRightInnerPos = input.topRightPos + float2(-topRightRadiusX, topRightRadiusY);
+    output.bottomRightInnerPos = input.bottomRightPos + float2(-bottomRightRadiusX, -bottomRightRadiusY);
+
+    output.topLeftRadius = min(topLeftRadiusX, topLeftRadiusY);
+    output.bottomLeftRadius = min(bottomLeftRadiusX, bottomLeftRadiusY);
+    output.topRightRadius = min(topRightRadiusX, topRightRadiusY);
+    output.bottomRightRadius = min(bottomRightRadiusX, bottomRightRadiusY);
+
     return output;
 }

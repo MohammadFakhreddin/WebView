@@ -15,17 +15,20 @@ namespace MFA
 		explicit SolidFillRenderer(std::shared_ptr<Pipeline> pipeline);
 
 		static std::shared_ptr<LocalBufferTracker> AllocateBuffer(
-			Position const & pos0, 
-			Position const & pos1, 
-			Position const & pos2, 
-			Position const & pos3, 
+			Position const & topLeftPos,
+			Position const & bottomLeftPos,
+			Position const & topRightPos,
+			Position const & bottomRightPos,
 			
-			Color const & color0, 
-			Color const & color1, 
-			Color const & color2, 
-			Color const & color3,
+			Color const & topLeftColor,
+			Color const & bottomLeftColor,
+			Color const & topRightColor,
+			Color const & bottomRightColor,
 
-			float borderRadius
+			float topLeftBorderRadius,
+			float bottomLeftBorderRadius,
+			float topRightBorderRadius,
+			float bottomRightBorderRadius
 		);
 
 		void Draw(RT::CommandRecordState& recordState, LocalBufferTracker const& vertexBuffer) const;

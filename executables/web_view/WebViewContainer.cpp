@@ -6,15 +6,20 @@
 
 #include <ranges>
 
+// TODO: 1- Implement custom font support
+// TODO: 2- Implement image support
+// TODO: 3- Fix width height ratio related issues
+
 //=========================================================================================
-// TODO: Create class that extends from this class for specific tasks
 WebViewContainer::WebViewContainer(
 	std::shared_ptr<MFA::Blob> const & htmlBlob,
+	litehtml::position clip,
 	std::shared_ptr<LineRenderer> lineRenderer,
 	std::shared_ptr<FontRenderer> fontRenderer,
 	std::shared_ptr<SolidFillRenderer> solidFillRenderer
 )
 	: litehtml::document_container()
+	, _clip(clip)
 	, _fontRenderer(std::move(fontRenderer))
 	, _lineRenderer(std::move(lineRenderer))
 	, _solidFillRenderer(std::move(solidFillRenderer))
@@ -25,31 +30,6 @@ WebViewContainer::WebViewContainer(
 		htmlText,
 		this
 	);
-	
-	auto root = _html->root();
-	
-	auto newGameButton = GetElementById("new-game", root);
-
-	std::string classAttr = newGameButton->get_attr("class");
-	classAttr = classAttr.append(" selected");
-
-	newGameButton->set_attr("class", classAttr.c_str());
-	newGameButton->apply_stylesheet(_html->m_styles);
-	newGameButton->refresh_styles();
-
-	newGameButton->compute_styles();
-	
-	auto* device = MFA::LogicalDevice::Instance;
-	
-	litehtml::position clip{};
-	clip.width = device->GetWindowWidth();
-	clip.height = device->GetWindowHeight();
-	clip.x = 0;
-	clip.y = 0;
-
-	_html->render(clip.width, litehtml::render_all);
-
-	_html->draw(0, clip.x, clip.y, &clip);
 }
 
 //=========================================================================================
@@ -60,6 +40,16 @@ WebViewContainer::~WebViewContainer() = default;
 
 void WebViewContainer::Update()
 {
+	if (_isDirty == true)
+	{
+		MFA::RB::DeviceWaitIdle(MFA::LogicalDevice::Instance->GetVkDevice());
+		_isDirty = false;
+		_drawCalls.clear();
+		_textDataList.clear();
+		_solidFillBuffers.clear();
+		_html->render(_clip.width, litehtml::render_all);
+		_html->draw(0, _clip.x, _clip.y, &_clip);
+	}
 }
 
 //=========================================================================================
@@ -227,41 +217,58 @@ void WebViewContainer::draw_solid_fill(
 	const litehtml::web_color& color
 )
 {
-	auto* device = MFA::LogicalDevice::Instance;
+	auto * device = MFA::LogicalDevice::Instance;
 	auto const windowWidth = static_cast<float>(device->GetWindowWidth());
 	auto const windowHeight = static_cast<float>(device->GetWindowHeight());
 
 	auto const halfWidth = windowWidth * 0.5f;
 	auto const halfHeight = windowHeight * 0.5f;
 
-	float borderX = (static_cast<float>(layer.border_box.x) - halfWidth) / halfWidth;
-	float borderY = (static_cast<float>(layer.border_box.y) - halfHeight) / halfHeight;
+	float const borderX = (static_cast<float>(layer.border_box.x) - halfWidth) / halfWidth;
+	float const borderY = (static_cast<float>(layer.border_box.y) - halfHeight) / halfHeight;
 
-	float solidWidth = static_cast<float>(layer.border_box.width) / halfWidth;
-	float solidHeight = static_cast<float>(layer.border_box.height) / halfHeight;
+	float const solidWidth = static_cast<float>(layer.border_box.width) / halfWidth;
+	float const solidHeight = static_cast<float>(layer.border_box.height) / halfHeight;
 
-	glm::vec2 pos0{ borderX, borderY };
-	glm::vec3 color0 = ConvertColor(color);
+	glm::vec2 const topLeftPos{ borderX, borderY };
+	auto const topLeftColor = ConvertColor(color);
+	float const topLeftX = (float)layer.border_radius.top_left_x / halfWidth;
+	float const topLeftY = (float)layer.border_radius.top_left_y / halfHeight;
+	float const topLeftRadius = std::sqrt(static_cast<float>((topLeftX * topLeftX) + (topLeftY * topLeftY)));
 
-	glm::vec2 pos1 = pos0 + glm::vec2{ solidWidth, 0.0f };
-	glm::vec3 color1 = color0;
+	glm::vec2 const topRightPos = topLeftPos + glm::vec2{ solidWidth, 0.0f };
+	auto const topRightColor = topLeftColor;
+	float const topRightX = (float)layer.border_radius.top_right_x / halfWidth;
+	float const topRightY = (float)layer.border_radius.top_right_y / halfHeight;
+	float const topRightRadius = std::sqrt(static_cast<float>((topRightX * topRightX) + (topRightY * topRightY)));
 
-	glm::vec2 pos2 = pos0 + glm::vec2{ 0.0f, solidHeight };
-	glm::vec3 color2 = color0;
+	glm::vec2 const bottomLeftPos = topLeftPos + glm::vec2{ 0.0f, solidHeight };
+	auto const bottomLeftColor = topLeftColor;
+	float const bottomLeftX = (float)layer.border_radius.bottom_left_x / halfWidth;
+	float const bottomLeftY = (float)layer.border_radius.bottom_left_y / halfHeight;
+	float const bottomLeftRadius = std::sqrt(static_cast<float>((bottomLeftX * bottomLeftX) + (bottomLeftY * bottomLeftY)));
 
-	glm::vec2 pos3 = pos0 + glm::vec2{ solidWidth, solidHeight };
-	glm::vec3 color3 = color0;
+	glm::vec2 const bottomRightPos = topLeftPos + glm::vec2{ solidWidth, solidHeight };
+	auto const bottomRightColor = topLeftColor;
+	float const bottomRightX = (float)layer.border_radius.bottom_right_x / halfWidth;
+	float const bottomRightY = (float)layer.border_radius.bottom_right_y / halfHeight;
+	float const bottomRightRadius = std::sqrt(static_cast<float>((bottomRightX * bottomRightX) + (bottomRightY * bottomRightY)));
 
 	std::shared_ptr<MFA::LocalBufferTracker> bufferTracker = _solidFillRenderer->AllocateBuffer(
-		pos0, 
-		pos1, 
-		pos2, 
-		pos3, 
-		color0, 
-		color1, 
-		color2, 
-		color3,
-		static_cast<float>(layer.border_radius.bottom_left_x) / windowWidth // TODO: Each of them need a border radius
+		topLeftPos,
+		bottomLeftPos,
+		topRightPos,
+		bottomRightPos,
+
+		topLeftColor,
+		bottomLeftColor,
+		topRightColor,
+		bottomRightColor,
+
+		topLeftRadius,
+		bottomLeftRadius,
+		topRightRadius,
+		bottomRightRadius
 	);
 	_solidFillBuffers.emplace_back(bufferTracker);
 
@@ -290,8 +297,8 @@ void WebViewContainer::draw_text(
 	textParams.vTextAlign = FontRenderer::VerticalTextAlign::Top;
 	textParams.scale = _fontScales[hFont - 1];
 	
-	float x = static_cast<float>(pos.x);
-	float y = static_cast<float>(pos.y);
+	auto const x = static_cast<float>(pos.x);
+	auto const y = static_cast<float>(pos.y);
 
 	_fontRenderer->AddText(*textData, text, x, y, textParams);
 	_textDataList.emplace_back(textData);
@@ -430,14 +437,22 @@ void WebViewContainer::transform_text(litehtml::string& text, litehtml::text_tra
 
 //=========================================================================================
 
-glm::vec3 WebViewContainer::ConvertColor(litehtml::web_color const& webColor)
+glm::vec4 WebViewContainer::ConvertColor(litehtml::web_color const& webColor)
 {
-	return glm::vec3
+	return glm::vec4
 	{
 		static_cast<float>(webColor.red) / 255.0f,
 		static_cast<float>(webColor.green) / 255.0f,
-		static_cast<float>(webColor.blue) / 255.0f
+		static_cast<float>(webColor.blue) / 255.0f,
+		static_cast<float>(webColor.alpha) / 255.0f
 	};
+}
+
+//=========================================================================================
+
+litehtml::element::ptr WebViewContainer::GetElementById(char const *id)
+{
+	return GetElementById(id, _html->root());
 }
 
 //=========================================================================================
@@ -462,129 +477,13 @@ litehtml::element::ptr WebViewContainer::GetElementById(char const * targetId, l
 	return nullptr;
 }
 
-// GumboNode * WebViewContainer::GetElementById(const char *id, GumboNode * document) 
-// {
-
-// 	if (GUMBO_NODE_DOCUMENT != document->type && GUMBO_NODE_ELEMENT != document->type) 
-// 	{
-// 		return nullptr;
-// 	}
-
-// 	GumboAttribute *node_id =
-// 	gumbo_get_attribute(&document->v.element.attributes, "id");
-// 	if (node_id && 0 == strcmp(id, node_id->value)) 
-// 	{
-// 		return document;
-// 	}
-
-// 	// iterate all children
-// 	GumboVector *children = &document->v.element.children;
-// 	for (unsigned int i = 0; i < children->length; i++) 
-// 	{
-// 		GumboNode *node = GetElementById(id, (GumboNode *)children->data[i]);
-// 		if (node) return node;
-// 	}
-
-// 	return nullptr;
-// }
-
 //=========================================================================================
 
-// bool WebViewContainer::ParseHTML(std::string & string)
-// {
-// 	if (_gumboOutput != nullptr)
-// 	{
-// 		gumbo_destroy_output(&kGumboDefaultOptions, _gumboOutput);
-// 	}
-
-// 	// Create litehtml::document
-// 	_html = make_shared<litehtml::document>(this);
-
-// 	// Parse document into GumboOutput
-// 	GumboOutput* output = _html->parse_html(string);
-
-// 	// mode must be set before doc->create_node because it is used in html_tag::set_attr
-// 	switch (output->document->v.document.doc_type_quirks_mode)
-// 	{
-// 	case GUMBO_DOCTYPE_NO_QUIRKS:      doc->m_mode = no_quirks_mode;      break;
-// 	case GUMBO_DOCTYPE_QUIRKS:         doc->m_mode = quirks_mode;         break;
-// 	case GUMBO_DOCTYPE_LIMITED_QUIRKS: doc->m_mode = limited_quirks_mode; break;
-// 	}
-
-// 	// Create litehtml::elements.
-// 	elements_list root_elements;
-// 	doc->create_node(output->root, root_elements, true);
-// 	if (!root_elements.empty())
-// 	{
-// 		doc->m_root = root_elements.back();
-// 	}
-
-// 	// Destroy GumboOutput
-// 	gumbo_destroy_output(&kGumboDefaultOptions, output);
-
-// 	if (master_styles != "")
-// 	{
-// 		doc->m_master_css.parse_css_stylesheet(master_styles, "", doc);
-// 		doc->m_master_css.sort_selectors();
-// 	}
-// 	if (user_styles != "")
-// 	{
-// 		doc->m_user_css.parse_css_stylesheet(user_styles, "", doc);
-// 		doc->m_user_css.sort_selectors();
-// 	}
-
-// 	// Let's process created elements tree
-// 	if (doc->m_root)
-// 	{
-// 		doc->container()->get_media_features(doc->m_media);
-
-// 		doc->m_root->set_pseudo_class(_root_, true);
-
-// 		// apply master CSS
-// 		doc->m_root->apply_stylesheet(doc->m_master_css);
-
-// 		// parse elements attributes
-// 		doc->m_root->parse_attributes();
-
-// 		// parse style sheets linked in document
-// 		for (const auto& css : doc->m_css)
-// 		{
-// 			media_query_list_list::ptr media;
-// 			if (css.media != "")
-// 			{
-// 				auto mq_list = parse_media_query_list(css.media, doc);
-// 				media = make_shared<media_query_list_list>();
-// 				media->add(mq_list);
-// 			}
-// 			doc->m_styles.parse_css_stylesheet(css.text, css.baseurl, doc, media);
-// 		}
-// 		// Sort css selectors using CSS rules.
-// 		doc->m_styles.sort_selectors();
-
-// 		// Apply media features.
-// 		doc->update_media_lists(doc->m_media);
-
-// 		// Apply parsed styles.
-// 		doc->m_root->apply_stylesheet(doc->m_styles);
-
-// 		// Apply user styles if any
-// 		doc->m_root->apply_stylesheet(doc->m_user_css);
-
-// 		// Initialize element::m_css
-// 		doc->m_root->compute_styles();
-
-// 		// Create rendering tree
-// 		doc->m_root_render = doc->m_root->create_render_item(nullptr);
-
-// 		// Now the m_tabular_elements is filled with tabular elements.
-// 		// We have to check the tabular elements for missing table elements 
-// 		// and create the anonymous boxes in visual table layout
-// 		doc->fix_tables_layout();
-
-// 		// Finally initialize elements
-// 		// init() returns pointer to the render_init element because it can change its type
-// 		doc->m_root_render = doc->m_root_render->init();
-// 	}
-// }
+void WebViewContainer::InvalidateStyles(litehtml::element::ptr element)
+{
+	element->apply_stylesheet(_html->m_styles);
+	element->compute_styles();
+	_isDirty = true;
+}
 
 //=========================================================================================

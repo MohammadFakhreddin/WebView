@@ -12,29 +12,38 @@ MFA::SolidFillRenderer::SolidFillRenderer(std::shared_ptr<SolidFillPipeline> pip
 //------------------------------------------------------------------
 
 std::shared_ptr<MFA::LocalBufferTracker> MFA::SolidFillRenderer::AllocateBuffer(
-	Position const& pos0,
-	Position const& pos1, 
-	Position const& pos2, 
-	Position const& pos3, 
+	Position const& topLeftPos,
+	Position const& bottomLeftPos,
+	Position const& topRightPos,
+	Position const& bottomRightPos,
 	
-	Color const& color0, 
-	Color const& color1,
-	Color const& color2, 
-	Color const& color3,
+	Color const& topLeftColor,
+	Color const& bottomLeftColor,
+	Color const& topRightColor,
+	Color const& bottomRightColor,
 
-	float const borderRadius
+	float topLeftBorderRadius,
+	float bottomLeftBorderRadius,
+	float topRightBorderRadius,
+	float bottomRightBorderRadius
 )
 {
 	Pipeline::Instance data{
-		.innerPos0 = pos0,
-		.color0 = color0,
-		.innerPos1 = pos1,
-		.color1 = color1,
-		.innerPos2 = pos2,
-		.color2 = color2,
-		.innerPos3 = pos3,
-		.color3 = color3,
-		.borderRadius = borderRadius
+		.topLeftPos = topLeftPos,
+		.topLeftRadius = topLeftBorderRadius,
+		.topLeftColor = topLeftColor,
+
+		.bottomLeftPos = bottomLeftPos,
+		.bottomLeftRadius = bottomLeftBorderRadius,
+		.bottomLeftColor = bottomLeftColor,
+
+		.topRightPos = topRightPos,
+		.topRightRadius = topRightBorderRadius,
+		.topRightColor = topRightColor,
+
+		.bottomRightPos = bottomRightPos,
+		.bottomRightRadius = bottomRightBorderRadius,
+		.bottomRightColor = bottomRightColor,
 	};
 
 	auto const * device = LogicalDevice::Instance;

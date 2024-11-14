@@ -147,6 +147,14 @@ void WebViewApp::OnSDL_Event(SDL_Event* event)
         {
             Reload();
         }
+        else if (event->key.keysym.sym == SDLK_DOWN)
+        {
+            SetSelectedButton(_selectedButtonIdx + 1);
+        }
+        else if (event->key.keysym.sym == SDLK_UP)
+        {
+            SetSelectedButton(_selectedButtonIdx - 1);
+        }
     }
 }
 
@@ -163,10 +171,61 @@ void WebViewApp::Reload()
 
 void WebViewApp::InstantiateWebViewContainer()
 {
-    auto * path = Path::Instance;
-	auto htmlPath = path->Get("web_view/Test.html");
-	auto const htmlBlob = File::Read(htmlPath);    
-    _webViewContainer = std::make_unique<WebViewContainer>(htmlBlob, _lineRenderer, _fontRenderer, _solidFillRenderer);
+    auto const * path = Path::Instance;
+    auto const * device = LogicalDevice::Instance;
+
+	auto const htmlPath = path->Get("web_view/Test.html");
+	auto const htmlBlob = File::Read(htmlPath);
+
+    litehtml::position clip;
+    clip.x = 0;
+    clip.y = 0;
+    clip.width = device->GetWindowWidth();
+    clip.height = device->GetWindowHeight();
+
+    _webViewContainer = std::make_unique<WebViewContainer>(
+        htmlBlob,
+        clip,
+        _lineRenderer,
+        _fontRenderer,
+        _solidFillRenderer
+    );
+
+    _buttons.clear();
+    _buttons.emplace_back(_webViewContainer->GetElementById("new-game"));
+    _buttons.emplace_back(_webViewContainer->GetElementById("continue"));
+    _buttons.emplace_back(_webViewContainer->GetElementById("settings"));
+    _buttons.emplace_back(_webViewContainer->GetElementById("exit"));
+
+    SetSelectedButton(0);
+}
+
+//=============================================================
+
+void WebViewApp::SetSelectedButton(int const idx)
+{
+    static constexpr char const * SelectedKeyword = " selected";
+    static constexpr size_t SelectedKeywordSize = strlen(SelectedKeyword);
+    _selectedButtonIdx = (idx + _buttons.size()) % _buttons.size();
+    for (int i = 0; i < _buttons.size(); ++i)
+    {
+        auto const & button = _buttons[i];
+        std::string classAttr = button->get_attr("class");
+        if (i == _selectedButtonIdx)
+        {
+            classAttr = classAttr.append(SelectedKeyword);
+        }
+        else
+        {
+            auto const findResult = classAttr.find(SelectedKeyword);
+            if (findResult != std::string::npos)
+            {
+                classAttr.erase(findResult, SelectedKeywordSize);
+            }
+        }
+        button->set_attr("class", classAttr.c_str());
+        _webViewContainer->InvalidateStyles(button);
+    }
 }
 
 //=============================================================

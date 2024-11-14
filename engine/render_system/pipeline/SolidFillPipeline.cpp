@@ -104,6 +104,7 @@ namespace MFA
 		};
 
 		std::vector<VkVertexInputAttributeDescription> inputAttributeDescriptions{};
+
 		// Position
 		inputAttributeDescriptions.emplace_back(VkVertexInputAttributeDescription{
 			.location = static_cast<uint32_t>(inputAttributeDescriptions.size()),
@@ -115,50 +116,75 @@ namespace MFA
 		inputAttributeDescriptions.emplace_back(VkVertexInputAttributeDescription{
 			.location = static_cast<uint32_t>(inputAttributeDescriptions.size()),
 			.binding = 0,
-			.format = VK_FORMAT_R32G32B32_SFLOAT,
+			.format = VK_FORMAT_R32G32B32A32_SFLOAT,
 			.offset = offsetof(Vertex, color),
 		});
-		// InnerPos0
+
+		// topLeftPos
 		inputAttributeDescriptions.emplace_back(VkVertexInputAttributeDescription{
 			.location = static_cast<uint32_t>(inputAttributeDescriptions.size()),
 			.binding = 1,
 			.format = VK_FORMAT_R32G32_SFLOAT,
-			.offset = offsetof(Instance, innerPos0)
+			.offset = offsetof(Instance, topLeftPos)
 		});
-		// InnerPos1
-		inputAttributeDescriptions.emplace_back(VkVertexInputAttributeDescription{
-			.location = static_cast<uint32_t>(inputAttributeDescriptions.size()),
-			.binding = 1,
-			.format = VK_FORMAT_R32G32_SFLOAT,
-			.offset = offsetof(Instance, innerPos1)
-		});
-		// InnerPos2
-		inputAttributeDescriptions.emplace_back(VkVertexInputAttributeDescription{
-			.location = static_cast<uint32_t>(inputAttributeDescriptions.size()),
-			.binding = 1,
-			.format = VK_FORMAT_R32G32_SFLOAT,
-			.offset = offsetof(Instance, innerPos2)
-		});
-		// InnerPos3
-		inputAttributeDescriptions.emplace_back(VkVertexInputAttributeDescription{
-			.location = static_cast<uint32_t>(inputAttributeDescriptions.size()),
-			.binding = 1,
-			.format = VK_FORMAT_R32G32_SFLOAT,
-			.offset = offsetof(Instance, innerPos3)
-		});
-		// BorderRadius
+		// topLeftRadius
 		inputAttributeDescriptions.emplace_back(VkVertexInputAttributeDescription{
 			.location = static_cast<uint32_t>(inputAttributeDescriptions.size()),
 			.binding = 1,
 			.format = VK_FORMAT_R32_SFLOAT,
-			.offset = offsetof(Instance, borderRadius)
+			.offset = offsetof(Instance, topLeftRadius)
+		});
+
+		// bottomLeftPos
+		inputAttributeDescriptions.emplace_back(VkVertexInputAttributeDescription{
+			.location = static_cast<uint32_t>(inputAttributeDescriptions.size()),
+			.binding = 1,
+			.format = VK_FORMAT_R32G32_SFLOAT,
+			.offset = offsetof(Instance, bottomLeftPos)
+		});
+		// bottomLeftRadius
+		inputAttributeDescriptions.emplace_back(VkVertexInputAttributeDescription{
+			.location = static_cast<uint32_t>(inputAttributeDescriptions.size()),
+			.binding = 1,
+			.format = VK_FORMAT_R32_SFLOAT,
+			.offset = offsetof(Instance, bottomLeftRadius)
+		});
+
+		// topRightPos
+		inputAttributeDescriptions.emplace_back(VkVertexInputAttributeDescription{
+			.location = static_cast<uint32_t>(inputAttributeDescriptions.size()),
+			.binding = 1,
+			.format = VK_FORMAT_R32G32_SFLOAT,
+			.offset = offsetof(Instance, topRightPos)
+		});
+		// topRightRadius
+		inputAttributeDescriptions.emplace_back(VkVertexInputAttributeDescription{
+			.location = static_cast<uint32_t>(inputAttributeDescriptions.size()),
+			.binding = 1,
+			.format = VK_FORMAT_R32_SFLOAT,
+			.offset = offsetof(Instance, topRightRadius)
+		});
+
+		// bottomRightPos
+		inputAttributeDescriptions.emplace_back(VkVertexInputAttributeDescription{
+			.location = static_cast<uint32_t>(inputAttributeDescriptions.size()),
+			.binding = 1,
+			.format = VK_FORMAT_R32G32_SFLOAT,
+			.offset = offsetof(Instance, bottomRightPos)
+		});
+		// bottomRightRadius
+		inputAttributeDescriptions.emplace_back(VkVertexInputAttributeDescription{
+			.location = static_cast<uint32_t>(inputAttributeDescriptions.size()),
+			.binding = 1,
+			.format = VK_FORMAT_R32_SFLOAT,
+			.offset = offsetof(Instance, bottomRightRadius)
 		});
 
 		RB::CreateGraphicPipelineOptions pipelineOptions{};
 		pipelineOptions.useStaticViewportAndScissor = false;
 		pipelineOptions.primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
 		pipelineOptions.rasterizationSamples = LogicalDevice::Instance->GetMaxSampleCount();            // TODO Find a way to set sample count to 1. We only need MSAA for pbr-pipeline
-		pipelineOptions.cullMode = VK_CULL_MODE_BACK_BIT;
+		pipelineOptions.cullMode = VK_CULL_MODE_NONE;
 		pipelineOptions.colorBlendAttachments.blendEnable = VK_TRUE;
 		pipelineOptions.polygonMode = VK_POLYGON_MODE_FILL;
 		pipelineOptions.frontFace = VK_FRONT_FACE_CLOCKWISE;
