@@ -131,7 +131,7 @@ namespace MFA
 		inputAttributeDescriptions.emplace_back(VkVertexInputAttributeDescription{
 			.location = static_cast<uint32_t>(inputAttributeDescriptions.size()),
 			.binding = 1,
-			.format = VK_FORMAT_R32_SFLOAT,
+			.format = VK_FORMAT_R32G32_SFLOAT,
 			.offset = offsetof(Instance, topLeftRadius)
 		});
 
@@ -146,7 +146,7 @@ namespace MFA
 		inputAttributeDescriptions.emplace_back(VkVertexInputAttributeDescription{
 			.location = static_cast<uint32_t>(inputAttributeDescriptions.size()),
 			.binding = 1,
-			.format = VK_FORMAT_R32_SFLOAT,
+			.format = VK_FORMAT_R32G32_SFLOAT,
 			.offset = offsetof(Instance, bottomLeftRadius)
 		});
 
@@ -161,7 +161,7 @@ namespace MFA
 		inputAttributeDescriptions.emplace_back(VkVertexInputAttributeDescription{
 			.location = static_cast<uint32_t>(inputAttributeDescriptions.size()),
 			.binding = 1,
-			.format = VK_FORMAT_R32_SFLOAT,
+			.format = VK_FORMAT_R32G32_SFLOAT,
 			.offset = offsetof(Instance, topRightRadius)
 		});
 
@@ -176,7 +176,7 @@ namespace MFA
 		inputAttributeDescriptions.emplace_back(VkVertexInputAttributeDescription{
 			.location = static_cast<uint32_t>(inputAttributeDescriptions.size()),
 			.binding = 1,
-			.format = VK_FORMAT_R32_SFLOAT,
+			.format = VK_FORMAT_R32G32_SFLOAT,
 			.offset = offsetof(Instance, bottomRightRadius)
 		});
 

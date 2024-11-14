@@ -5,16 +5,16 @@ struct Input
     [[vk::location(1)]] float4 color : COLOR;
     // Per instance
     [[vk::location(2)]] float2 topLeftPos;
-    [[vk::location(3)]] float topLeftRadius;
+    [[vk::location(3)]] float2 topLeftRadius;
 
     [[vk::location(4)]] float2 bottomLeftPos;
-    [[vk::location(5)]] float bottomLeftRadius;
+    [[vk::location(5)]] float2 bottomLeftRadius;
 
     [[vk::location(6)]] float2 topRightPos;
-    [[vk::location(7)]] float topRightRadius;
+    [[vk::location(7)]] float2 topRightRadius;
 
     [[vk::location(8)]] float2 bottomRightPos;
-    [[vk::location(9)]] float bottomRightRadius;
+    [[vk::location(9)]] float2 bottomRightRadius;
 };
 
 struct Output
@@ -33,7 +33,12 @@ struct Output
     [[vk::location(7)]] float bottomLeftRadius;
     [[vk::location(8)]] float topRightRadius;
     [[vk::location(9)]] float bottomRightRadius;
-}
+};
+
+float Radius(float2 xy)
+{
+    return xy.y;
+};
 
 Output main(Input input)
 {
@@ -46,27 +51,17 @@ Output main(Input input)
     output.color = input.color;
 
     float2 center = (input.topLeftPos + input.bottomLeftPos + input.topRightPos + input.bottomRightPos) * 0.25;
-    float2 maxDiff = input.bottomRightPos - center;
-
-    float topLeftRadiusX = min(maxDiff.x, input.topLeftRadius);
-    float topLeftRadiusY = min(maxDiff.y, input.topLeftRadius);
-    float bottomLeftRadiusX = min(maxDiff.x, input.bottomLeftRadius);
-    float bottomLeftRadiusY = min(maxDiff.y, input.bottomLeftRadius);
-    float topRightRadiusX = min(maxDiff.x, input.topRightRadius);
-    float topRightRadiusY = min(maxDiff.y, input.topRightRadius);
-    float bottomRightRadiusX = min(maxDiff.x, input.bottomRightRadius);
-    float bottomRightRadiusY = min(maxDiff.y, input.bottomRightRadius);
 
     // This is probably why they have separated radius into x and y component
-    output.topLeftInnerPos = input.topLeftPos + float2(topLeftRadiusX, topLeftRadiusY);
-    output.bottomLeftInnerPos = input.bottomLeftPos + float2(bottomLeftRadiusX, -bottomLeftRadiusY);
-    output.topRightInnerPos = input.topRightPos + float2(-topRightRadiusX, topRightRadiusY);
-    output.bottomRightInnerPos = input.bottomRightPos + float2(-bottomRightRadiusX, -bottomRightRadiusY);
+    output.topLeftInnerPos = input.topLeftPos + float2(input.topLeftRadius.x, input.topLeftRadius.y);
+    output.bottomLeftInnerPos = input.bottomLeftPos + float2(input.bottomLeftRadius.x, -input.bottomLeftRadius.y);
+    output.topRightInnerPos = input.topRightPos + float2(-input.topRightRadius.x, input.topRightRadius.y);
+    output.bottomRightInnerPos = input.bottomRightPos + float2(-input.bottomRightRadius.x, -input.bottomRightRadius.y);
 
-    output.topLeftRadius = min(topLeftRadiusX, topLeftRadiusY);
-    output.bottomLeftRadius = min(bottomLeftRadiusX, bottomLeftRadiusY);
-    output.topRightRadius = min(topRightRadiusX, topRightRadiusY);
-    output.bottomRightRadius = min(bottomRightRadiusX, bottomRightRadiusY);
+    output.topLeftRadius = Radius(input.topLeftRadius);
+    output.bottomLeftRadius = Radius(input.bottomLeftRadius);
+    output.topRightRadius = Radius(input.topRightRadius);
+    output.bottomRightRadius = Radius(input.bottomRightRadius);
 
     return output;
 }

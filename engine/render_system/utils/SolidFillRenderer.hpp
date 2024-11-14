@@ -11,6 +11,7 @@ namespace MFA
 		using Pipeline = SolidFillPipeline;
 		using Position = Pipeline::Position;
 		using Color = Pipeline::Color;
+		using Radius = Pipeline::Radius;
 
 		explicit SolidFillRenderer(std::shared_ptr<Pipeline> pipeline);
 
@@ -25,10 +26,10 @@ namespace MFA
 			Color const & topRightColor,
 			Color const & bottomRightColor,
 
-			float topLeftBorderRadius,
-			float bottomLeftBorderRadius,
-			float topRightBorderRadius,
-			float bottomRightBorderRadius
+			Radius const & topLeftBorderRadius,
+			Radius const & bottomLeftBorderRadius,
+			Radius const & topRightBorderRadius,
+			Radius const & bottomRightBorderRadius
 		);
 
 		void Draw(RT::CommandRecordState& recordState, LocalBufferTracker const& vertexBuffer) const;

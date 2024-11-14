@@ -12,7 +12,6 @@ struct Input
     [[vk::location(7)]] float bottomLeftRadius;
     [[vk::location(8)]] float topRightRadius;
     [[vk::location(9)]] float bottomRightRadius;
-
 };
 
 struct Output

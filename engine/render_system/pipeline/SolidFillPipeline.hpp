@@ -12,7 +12,7 @@ namespace MFA
     public:
 
         using Position = glm::vec2;
-        using Radius = float;
+        using Radius = glm::vec2;
         using Color = glm::vec4;
 
         struct Vertex

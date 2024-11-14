@@ -22,10 +22,10 @@ std::shared_ptr<MFA::LocalBufferTracker> MFA::SolidFillRenderer::AllocateBuffer(
 	Color const& topRightColor,
 	Color const& bottomRightColor,
 
-	float topLeftBorderRadius,
-	float bottomLeftBorderRadius,
-	float topRightBorderRadius,
-	float bottomRightBorderRadius
+	Radius const& topLeftBorderRadius,
+	Radius const& bottomLeftBorderRadius,
+	Radius const& topRightBorderRadius,
+	Radius const& bottomRightBorderRadius
 )
 {
 	Pipeline::Instance data{

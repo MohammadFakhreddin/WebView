@@ -232,27 +232,27 @@ void WebViewContainer::draw_solid_fill(
 
 	glm::vec2 const topLeftPos{ borderX, borderY };
 	auto const topLeftColor = ConvertColor(color);
-	float const topLeftX = (float)layer.border_radius.top_left_x / halfWidth;
-	float const topLeftY = (float)layer.border_radius.top_left_y / halfHeight;
-	float const topLeftRadius = std::sqrt(static_cast<float>((topLeftX * topLeftX) + (topLeftY * topLeftY)));
+	float const topLeftX = (float)layer.border_radius.top_left_x / (halfHeight);
+	float const topLeftY = (float)layer.border_radius.top_left_y / (halfHeight);
+	auto const topLeftRadius = glm::vec2{topLeftX, topLeftY};
 
 	glm::vec2 const topRightPos = topLeftPos + glm::vec2{ solidWidth, 0.0f };
 	auto const topRightColor = topLeftColor;
-	float const topRightX = (float)layer.border_radius.top_right_x / halfWidth;
-	float const topRightY = (float)layer.border_radius.top_right_y / halfHeight;
-	float const topRightRadius = std::sqrt(static_cast<float>((topRightX * topRightX) + (topRightY * topRightY)));
+	float const topRightX = (float)layer.border_radius.top_right_x / (halfHeight);
+	float const topRightY = (float)layer.border_radius.top_right_y / (halfHeight);
+	auto const topRightRadius = glm::vec2{topRightX, topRightY};;
 
 	glm::vec2 const bottomLeftPos = topLeftPos + glm::vec2{ 0.0f, solidHeight };
 	auto const bottomLeftColor = topLeftColor;
-	float const bottomLeftX = (float)layer.border_radius.bottom_left_x / halfWidth;
-	float const bottomLeftY = (float)layer.border_radius.bottom_left_y / halfHeight;
-	float const bottomLeftRadius = std::sqrt(static_cast<float>((bottomLeftX * bottomLeftX) + (bottomLeftY * bottomLeftY)));
+	float const bottomLeftX = (float)layer.border_radius.bottom_left_x / (halfHeight);
+	float const bottomLeftY = (float)layer.border_radius.bottom_left_y / (halfHeight);
+	auto const bottomLeftRadius = glm::vec2{bottomLeftX, bottomLeftY};
 
 	glm::vec2 const bottomRightPos = topLeftPos + glm::vec2{ solidWidth, solidHeight };
 	auto const bottomRightColor = topLeftColor;
-	float const bottomRightX = (float)layer.border_radius.bottom_right_x / halfWidth;
-	float const bottomRightY = (float)layer.border_radius.bottom_right_y / halfHeight;
-	float const bottomRightRadius = std::sqrt(static_cast<float>((bottomRightX * bottomRightX) + (bottomRightY * bottomRightY)));
+	float const bottomRightX = (float)layer.border_radius.bottom_right_x / (halfHeight);
+	float const bottomRightY = (float)layer.border_radius.bottom_right_y / (halfHeight);
+	auto const bottomRightRadius = glm::vec2{bottomRightX, bottomRightY};
 
 	std::shared_ptr<MFA::LocalBufferTracker> bufferTracker = _solidFillRenderer->AllocateBuffer(
 		topLeftPos,
