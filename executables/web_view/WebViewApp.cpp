@@ -205,7 +205,7 @@ void WebViewApp::InstantiateWebViewContainer()
 void WebViewApp::SetSelectedButton(int const idx)
 {
     static constexpr char const * SelectedKeyword = " selected";
-    static constexpr size_t SelectedKeywordSize = strlen(SelectedKeyword);
+    static const size_t SelectedKeywordSize = strlen(SelectedKeyword);
     _selectedButtonIdx = (idx + _buttons.size()) % _buttons.size();
     for (int i = 0; i < _buttons.size(); ++i)
     {
