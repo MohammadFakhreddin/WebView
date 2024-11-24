@@ -23,7 +23,7 @@ float Distance(float2 pos0, float2 pos1)
 {
     return length(pos0 - pos1);
 }
-
+// The issue is with border radius itself
 float4 main(Input input) : SV_TARGET
 {
     float a = input.color.a;

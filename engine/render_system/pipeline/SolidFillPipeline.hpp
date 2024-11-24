@@ -42,6 +42,11 @@ namespace MFA
 
         };
 
+        struct PushConstants
+        {
+            glm::mat4 model{};
+        };
+
         explicit SolidFillPipeline(std::shared_ptr<DisplayRenderPass> displayRenderPass);
 
         ~SolidFillPipeline();
@@ -50,6 +55,8 @@ namespace MFA
         bool IsBinded(RT::CommandRecordState const& recordState) const;
 
         void BindPipeline(RT::CommandRecordState& recordState) const;
+
+        void SetPushConstant(RT::CommandRecordState & recordState, PushConstants const & pushConstant) const;
 
     private:
 

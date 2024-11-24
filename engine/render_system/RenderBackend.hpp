@@ -634,6 +634,13 @@ namespace MFA::RenderBackend
         BaseBlob const & data
     );
 
+    void PushConstants(
+        RT::CommandRecordState & recordState,
+        VkShaderStageFlags shaderStage,
+        uint32_t offset,
+        BaseBlob const & data
+    );
+
 
     struct CreateSamplerParams
     {

@@ -2908,6 +2908,24 @@ namespace MFA::RenderBackend
 
     //-------------------------------------------------------------------------------------------------
 
+    void PushConstants(
+        RT::CommandRecordState& recordState,
+        VkShaderStageFlags shaderStage,
+        uint32_t const offset,
+        BaseBlob const& data
+    )
+    {
+        PushConstants(
+            recordState,
+            recordState.pipeline->pipelineLayout,
+            shaderStage,
+            offset,
+            data
+        );
+    }
+
+    //-------------------------------------------------------------------------------------------------
+
     std::shared_ptr<RT::SamplerGroup> CreateSampler(
         VkDevice device, 
         CreateSamplerParams const& params

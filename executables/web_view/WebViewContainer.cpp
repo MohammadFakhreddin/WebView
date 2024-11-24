@@ -6,11 +6,8 @@
 
 #include <ranges>
 
-// TODO: 1- Implement custom font support
-// TODO: 2- Implement image support
-// TODO: 3- Fix width height ratio related issues
-
 //=========================================================================================
+
 WebViewContainer::WebViewContainer(
 	std::shared_ptr<MFA::Blob> const & htmlBlob,
 	litehtml::position clip,
@@ -30,6 +27,20 @@ WebViewContainer::WebViewContainer(
 		htmlText,
 		this
 	);
+
+    auto const bodyTag = GetElementByTag("body");
+    MFA_ASSERT(bodyTag != nullptr);
+
+    auto * device = MFA::LogicalDevice::Instance;
+    auto const windowWidth = static_cast<float>(device->GetWindowWidth());
+    auto const windowHeight = static_cast<float>(device->GetWindowHeight());
+
+    float halfWidth = windowWidth * 0.5f;
+    float halfHeight = windowHeight * 0.5f;
+    _modelMat = glm::transpose(glm::scale(glm::identity<glm::mat4>(), glm::vec3{1.0f / halfWidth, 1.0f / halfHeight, 1.0f }) *
+        glm::translate(glm::identity<glm::mat4>(), glm::vec3{ -halfWidth, -halfHeight, 0.0f }));
+
+    MFA_LOG_INFO("Start!");
 }
 
 //=========================================================================================
@@ -49,6 +60,7 @@ void WebViewContainer::Update()
 		_solidFillBuffers.clear();
 		_html->render(_clip.width, litehtml::render_all);
 		_html->draw(0, _clip.x, _clip.y, &_clip);
+        // TODO: We can record command buffer once
 	}
 }
 
@@ -100,7 +112,7 @@ litehtml::uint_ptr WebViewContainer::create_font(
 )
 {
 	float const scale = static_cast<float>(size) / static_cast<float>(get_default_font_size());
-	float const windowHeight = static_cast<float>(MFA::LogicalDevice::Instance->GetWindowHeight());
+    float const windowHeight = static_cast<float>(MFA::LogicalDevice::Instance->GetWindowHeight());
 	fm->height = static_cast<int>(_fontRenderer->TextHeight(scale) * windowHeight * 0.5f);
 	fm->draw_spaces = false;
 	_fontScales.emplace_back(scale);
@@ -217,41 +229,34 @@ void WebViewContainer::draw_solid_fill(
 	const litehtml::web_color& color
 )
 {
-	auto * device = MFA::LogicalDevice::Instance;
-	auto const windowWidth = static_cast<float>(device->GetWindowWidth());
-	auto const windowHeight = static_cast<float>(device->GetWindowHeight());
+	float const borderX = static_cast<float>(layer.border_box.x);
+    float const borderY = static_cast<float>(layer.border_box.y);
 
-	auto const halfWidth = windowWidth * 0.5f;
-	auto const halfHeight = windowHeight * 0.5f;
+    float const solidWidth = static_cast<float>(layer.border_box.width);;
+    float const solidHeight = static_cast<float>(layer.border_box.height);
 
-	float const borderX = (static_cast<float>(layer.border_box.x) - halfWidth) / halfWidth;
-	float const borderY = (static_cast<float>(layer.border_box.y) - halfHeight) / halfHeight;
+    glm::vec2 const topLeftPos{ borderX, borderY };
+    auto const topLeftColor = ConvertColor(color);
+    float const topLeftX = (float)layer.border_radius.top_left_x;
+    float const topLeftY = (float)layer.border_radius.top_left_y;
+    auto const topLeftRadius = glm::vec2{ topLeftX, topLeftY };
 
-	float const solidWidth = static_cast<float>(layer.border_box.width) / halfWidth;
-	float const solidHeight = static_cast<float>(layer.border_box.height) / halfHeight;
+    glm::vec2 const topRightPos = topLeftPos + glm::vec2{ solidWidth, 0.0f };
+    auto const topRightColor = topLeftColor;
+    float const topRightX = (float)layer.border_radius.top_right_x;
+    float const topRightY = (float)layer.border_radius.top_right_y;
+    auto const topRightRadius = glm::vec2{ topRightX, topRightY };;
 
-	glm::vec2 const topLeftPos{ borderX, borderY };
-	auto const topLeftColor = ConvertColor(color);
-	float const topLeftX = (float)layer.border_radius.top_left_x / (halfHeight);
-	float const topLeftY = (float)layer.border_radius.top_left_y / (halfHeight);
-	auto const topLeftRadius = glm::vec2{topLeftX, topLeftY};
+    glm::vec2 const bottomLeftPos = topLeftPos + glm::vec2{ 0.0f, solidHeight };
+    auto const bottomLeftColor = topLeftColor;
+    float const bottomLeftX = (float)layer.border_radius.bottom_left_x;
+    float const bottomLeftY = (float)layer.border_radius.bottom_left_y;
+    auto const bottomLeftRadius = glm::vec2{ bottomLeftX, bottomLeftY };
 
-	glm::vec2 const topRightPos = topLeftPos + glm::vec2{ solidWidth, 0.0f };
-	auto const topRightColor = topLeftColor;
-	float const topRightX = (float)layer.border_radius.top_right_x / (halfHeight);
-	float const topRightY = (float)layer.border_radius.top_right_y / (halfHeight);
-	auto const topRightRadius = glm::vec2{topRightX, topRightY};;
-
-	glm::vec2 const bottomLeftPos = topLeftPos + glm::vec2{ 0.0f, solidHeight };
-	auto const bottomLeftColor = topLeftColor;
-	float const bottomLeftX = (float)layer.border_radius.bottom_left_x / (halfHeight);
-	float const bottomLeftY = (float)layer.border_radius.bottom_left_y / (halfHeight);
-	auto const bottomLeftRadius = glm::vec2{bottomLeftX, bottomLeftY};
-
-	glm::vec2 const bottomRightPos = topLeftPos + glm::vec2{ solidWidth, solidHeight };
-	auto const bottomRightColor = topLeftColor;
-	float const bottomRightX = (float)layer.border_radius.bottom_right_x / (halfHeight);
-	float const bottomRightY = (float)layer.border_radius.bottom_right_y / (halfHeight);
+    glm::vec2 const bottomRightPos = topLeftPos + glm::vec2{ solidWidth, solidHeight };
+    auto const bottomRightColor = topLeftColor;
+    float const bottomRightX = (float)layer.border_radius.bottom_right_x;
+    float const bottomRightY = (float)layer.border_radius.bottom_right_y;
 	auto const bottomRightRadius = glm::vec2{bottomRightX, bottomRightY};
 
 	std::shared_ptr<MFA::LocalBufferTracker> bufferTracker = _solidFillRenderer->AllocateBuffer(
@@ -274,7 +279,11 @@ void WebViewContainer::draw_solid_fill(
 
 	_drawCalls.emplace_back([this, bufferTracker](MFA::RT::CommandRecordState& recordState)->void
 	{
-		_solidFillRenderer->Draw(recordState, *bufferTracker);
+        _solidFillRenderer->Draw(
+            recordState,
+            MFA::SolidFillPipeline::PushConstants{.model = _modelMat},
+            *bufferTracker
+        );
 	});
 }
 
@@ -422,7 +431,7 @@ void WebViewContainer::set_cursor(const char* cursor)
 
 int WebViewContainer::text_width(const char* text, litehtml::uint_ptr hFont)
 {
-	auto const windowWidth = static_cast<float>(MFA::LogicalDevice::Instance->GetWindowWidth()) * 0.5f;
+    auto const windowWidth = static_cast<float>(MFA::LogicalDevice::Instance->GetWindowWidth()) * 0.5f;
 	FontRenderer::TextParams params{};
 	params.scale = _fontScales[hFont - 1];
 	return static_cast<int>(_fontRenderer->TextWidth(std::string_view{text, strlen(text)}, params) * windowWidth);
@@ -450,24 +459,24 @@ glm::vec4 WebViewContainer::ConvertColor(litehtml::web_color const& webColor)
 
 //=========================================================================================
 
-litehtml::element::ptr WebViewContainer::GetElementById(char const *id)
+litehtml::element::ptr WebViewContainer::GetElementById(char const * id) const
 {
 	return GetElementById(id, _html->root());
 }
 
 //=========================================================================================
 
-litehtml::element::ptr WebViewContainer::GetElementById(char const * targetId, litehtml::element::ptr element)
+litehtml::element::ptr WebViewContainer::GetElementById(char const * id, litehtml::element::ptr element)
 {
 	auto const * elementId = element->get_attr("id");
-	if (elementId != nullptr && strcmp(elementId, targetId) == 0)
+	if (elementId != nullptr && strcmp(elementId, id) == 0)
 	{
 		return element;
 	}
 
 	for (auto & child : element->children())
 	{
-		auto result = GetElementById(targetId, child);
+		auto const result = GetElementById(id, child);
 		if (result != nullptr)
 		{
 			return result;
@@ -475,6 +484,35 @@ litehtml::element::ptr WebViewContainer::GetElementById(char const * targetId, l
 	}
 
 	return nullptr;
+}
+
+//=========================================================================================
+
+litehtml::element::ptr WebViewContainer::GetElementByTag(char const* tag) const
+{
+    return GetElementByTag(tag, _html->root());
+}
+
+//=========================================================================================
+
+litehtml::element::ptr WebViewContainer::GetElementByTag(char const * tag, litehtml::element::ptr element)
+{
+    auto const * tagName = element->get_tagName();
+    if (tagName != nullptr && strcmp(tagName, tag) == 0)
+    {
+        return element;
+    }
+
+    for (auto & child : element->children())
+    {
+        auto const result = GetElementById(tag, child);
+        if (result != nullptr)
+        {
+            return result;
+        }
+    }
+
+    return nullptr;
 }
 
 //=========================================================================================

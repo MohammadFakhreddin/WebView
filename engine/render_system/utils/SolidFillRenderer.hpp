@@ -32,7 +32,11 @@ namespace MFA
 			Radius const & bottomRightBorderRadius
 		);
 
-		void Draw(RT::CommandRecordState& recordState, LocalBufferTracker const& vertexBuffer) const;
+		void Draw(
+            RT::CommandRecordState & recordState,
+            Pipeline::PushConstants const & pushConstants,
+            LocalBufferTracker const & vertexBuffer
+        ) const;
 
 	private:
 

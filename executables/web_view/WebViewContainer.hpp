@@ -18,12 +18,12 @@ public:
 	using SolidFillRenderer = MFA::SolidFillRenderer;
 
 	// TODO: We need an image renderer class as well
-	explicit WebViewContainer(
-		std::shared_ptr<MFA::Blob> const & htmlBlob,
-		litehtml::position clip,
-		std::shared_ptr<LineRenderer> lineRenderer,
-		std::shared_ptr<FontRenderer> fontRenderer,
-		std::shared_ptr<SolidFillRenderer> solidFillRenderer
+    explicit WebViewContainer(
+        std::shared_ptr<MFA::Blob> const & htmlBlob,
+        litehtml::position clip,
+        std::shared_ptr<LineRenderer> lineRenderer,
+        std::shared_ptr<FontRenderer> fontRenderer,
+        std::shared_ptr<SolidFillRenderer> solidFillRenderer
 	);
 
 	~WebViewContainer() override;
@@ -35,10 +35,16 @@ public:
 	void DisplayPass(MFA::RT::CommandRecordState& recordState);
 
 	[[nodiscard]]
-	litehtml::element::ptr GetElementById(char const * id);
+	litehtml::element::ptr GetElementById(char const * id) const;
 
 	[[nodiscard]]
 	static litehtml::element::ptr GetElementById(char const * id, litehtml::element::ptr element);
+
+    [[nodiscard]]
+    litehtml::element::ptr GetElementByTag(char const * tag) const;
+
+    [[nodiscard]]
+    static litehtml::element::ptr GetElementByTag(char const * tag, litehtml::element::ptr element);
 
 	void InvalidateStyles(litehtml::element::ptr element);
 	
@@ -173,4 +179,14 @@ private:
 
 	bool _isDirty = true;
 
+    // This is the reference width and height
+    //int _refWidth = -1;
+    //int _refHeight = -1;
+
+    //float _scale = 0.0f;
+
+    //float _scaleWidth = 0.0f;
+    //float _scaleHeight = 0.0f;
+
+    glm::mat4 _modelMat{};
 };

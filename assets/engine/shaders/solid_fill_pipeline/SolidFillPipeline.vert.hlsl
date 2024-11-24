@@ -35,6 +35,15 @@ struct Output
     [[vk::location(9)]] float bottomRightRadius;
 };
 
+struct PushConsts
+{    
+    float4x4 model;
+};
+[[vk::push_constant]]
+cbuffer {
+    PushConsts pushConsts;
+};
+
 float Radius(float2 xy)
 {
     return xy.y;
@@ -44,13 +53,13 @@ Output main(Input input)
 {
     Output output;
 
-    float4 position = float4(input.position, 0.0, 1.0);
+    float4 position = pushConsts.model * float4(input.position.x, input.position.y, 0.0, 1.0);
 
     output.position = position;
-    output.screenPos = position.xy;
+    output.screenPos = input.position.xy;
     output.color = input.color;
 
-    float2 center = (input.topLeftPos + input.bottomLeftPos + input.topRightPos + input.bottomRightPos) * 0.25;
+    // float2 center = (input.topLeftPos + input.bottomLeftPos + input.topRightPos + input.bottomRightPos) * 0.25;
 
     // This is probably why they have separated radius into x and y component
     output.topLeftInnerPos = input.topLeftPos + float2(input.topLeftRadius.x, input.topLeftRadius.y);

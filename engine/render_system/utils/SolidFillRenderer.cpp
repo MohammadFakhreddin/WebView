@@ -74,9 +74,15 @@ std::shared_ptr<MFA::LocalBufferTracker> MFA::SolidFillRenderer::AllocateBuffer(
 
 //------------------------------------------------------------------
 
-void MFA::SolidFillRenderer::Draw(RT::CommandRecordState& recordState, LocalBufferTracker const& vertexBuffer) const
+void MFA::SolidFillRenderer::Draw(
+    RT::CommandRecordState& recordState,
+    Pipeline::PushConstants const & pushConstants,
+    LocalBufferTracker const& vertexBuffer
+) const
 {
 	_pipeline->BindPipeline(recordState);
+
+    _pipeline->SetPushConstant(recordState, pushConstants);
 
 	auto const & localBuffers = vertexBuffer.LocalBuffer().buffers;
 	auto const & localBuffer = localBuffers[recordState.frameIndex % localBuffers.size()];

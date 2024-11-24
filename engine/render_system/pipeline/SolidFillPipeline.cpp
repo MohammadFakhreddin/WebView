@@ -48,7 +48,23 @@ namespace MFA
 		RB::BindPipeline(recordState, *_pipeline);
 	}
 
-	//=================================================================
+    //=================================================================
+
+    void SolidFillPipeline::SetPushConstant(
+        RT::CommandRecordState& recordState,
+        PushConstants const& pushConstant
+    ) const
+    {
+        RB::PushConstants(
+            recordState,
+            _pipeline->pipelineLayout,
+            VK_SHADER_STAGE_VERTEX_BIT,
+            0,
+            Alias{ pushConstant }
+        );
+    }
+
+    //=================================================================
 
 	void SolidFillPipeline::CreatePipeline()
 	{
@@ -191,12 +207,21 @@ namespace MFA
 		pipelineOptions.depthStencil.depthTestEnable = false;
 		pipelineOptions.depthStencil.depthWriteEnable = false;
 
+        std::vector<VkPushConstantRange> pushConstantRanges{};
+		{
+            pushConstantRanges.emplace_back();
+            auto & pushConstant = pushConstantRanges.back();
+            pushConstant.size = sizeof(PushConstants);
+            pushConstant.offset = 0;
+            pushConstant.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+		}
+        
 		const auto pipelineLayout = RB::CreatePipelineLayout(
 			LogicalDevice::Instance->GetVkDevice(),
 			0,
 			nullptr,
-			0,
-			nullptr
+            pushConstantRanges.size(),
+            pushConstantRanges.data()
 		);
 
 		auto surfaceCapabilities = LogicalDevice::Instance->GetSurfaceCapabilities();
