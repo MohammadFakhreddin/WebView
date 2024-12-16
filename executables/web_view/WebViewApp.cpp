@@ -51,9 +51,6 @@ void WebViewApp::Run()
     auto const fontPipeline = std::make_shared<TextOverlayPipeline>(_displayRenderPass, fontSampler);
     _fontRenderer = std::make_shared<ConsolasFontRenderer>(fontPipeline);
 
-    auto const linePipeline = std::make_shared<LinePipeline>(_displayRenderPass, 1e4);
-    _lineRenderer = std::make_shared<LineRenderer>(linePipeline);
-
     auto const solidFillPipeline = std::make_shared<SolidFillPipeline>(_displayRenderPass);
     _solidFillRenderer = std::make_shared<SolidFillRenderer>(solidFillPipeline);
 
@@ -186,7 +183,6 @@ void WebViewApp::InstantiateWebViewContainer()
     _webViewContainer = std::make_unique<WebViewContainer>(
         htmlBlob,
         clip,
-        _lineRenderer,
         _fontRenderer,
         _solidFillRenderer
     );

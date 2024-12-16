@@ -54,7 +54,7 @@ if(LINUX)
     set(THREADS_PREFER_PTHREAD_FLAG ON)
 endif()
 
-### OpenMP #############################################
+### OpenMP ######################################################
 
 find_package(OpenMP REQUIRED)
 set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
@@ -62,18 +62,18 @@ set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
 link_libraries(OpenMP::OpenMP_CXX)
 
-### Imgui ###############################################
+### Imgui ######################################################
 
 add_subdirectory("${CMAKE_SOURCE_DIR}/engine/libs/imgui")
 include_directories("${CMAKE_SOURCE_DIR}/engine/libs/imgui")
 
-### Vulkan ##############################################
+### Vulkan #####################################################
 
 add_subdirectory("${CMAKE_SOURCE_DIR}/submodules/Vulkan-Headers")
 include_directories("${CMAKE_SOURCE_DIR}/submodules/Vulkan-Headers/include")
 add_subdirectory("${CMAKE_SOURCE_DIR}/submodules/Vulkan-Loader")
 
-### glm ##################################################
+### glm ########################################################
 
 add_definitions(-DGLM_FORCE_SILENT_WARNINGS)
 add_definitions(-DGLM_FORCE_DEPTH_ZERO_TO_ONE)
@@ -82,11 +82,11 @@ add_definitions(-DGLM_FORCE_LEFT_HANDED)
 add_subdirectory("${CMAKE_SOURCE_DIR}/engine/libs/glm/glm")
 include_directories("${CMAKE_SOURCE_DIR}/engine/libs/glm/glm")
 
-### Working directory
+### Working directory #########################################
 
 add_compile_definitions("ASSET_DIR=${CMAKE_SOURCE_DIR}/assets")
 
-### LibConfig ############################################
+### LibConfig #################################################
 
 add_subdirectory("${CMAKE_SOURCE_DIR}/engine/libs/libconfig")
 include_directories("${CMAKE_SOURCE_DIR}/engine/libs/libconfig")
@@ -94,17 +94,17 @@ include_directories("${CMAKE_CURRENT_SOURCE_DIR}/engine/libs/libconfig/stb_image
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/engine/libs/libconfig/nlohmann")
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/engine/libs/libconfig/tiny_gltf_loader")
 
-## SDL ###################################################
+## SDL #######################################################
 
 add_subdirectory("${CMAKE_SOURCE_DIR}/submodules/SDL2")
 include_directories("${CMAKE_SOURCE_DIR}/submodules/SDL2/include")
 
-## LiteHTML #############################################
+## LiteHTML #################################################
 
 add_subdirectory("${CMAKE_SOURCE_DIR}/submodules/litehtml")
 include_directories("${CMAKE_SOURCE_DIR}/submodules/litehtml/include")
 
-### Linking libraries ####################################
+### Linking libraries #######################################
 
 if(OpenMP_CXX_FOUND)
     link_libraries(OpenMP::OpenMP_CXX)
@@ -116,13 +116,13 @@ link_libraries(SDL2-static)
 link_libraries(LibConfig)
 link_libraries(litehtml)
 
-### Bedrock ##############################################
+### Bedrock #################################################
 
 add_subdirectory("${CMAKE_SOURCE_DIR}/engine/bedrock")
 include_directories("${CMAKE_SOURCE_DIR}/engine/bedrock")
 link_libraries(Bedrock)
 
-### Entity system ########################################
+### Entity system ###########################################
 
 add_subdirectory("${CMAKE_SOURCE_DIR}/engine/entity_system")
 include_directories("${CMAKE_SOURCE_DIR}/engine/entity_system")
@@ -158,8 +158,15 @@ add_subdirectory("${CMAKE_SOURCE_DIR}/engine/render_system")
 include_directories("${CMAKE_SOURCE_DIR}/engine/render_system")
 link_libraries(RenderSystem)
 
+### Shared ##################################################
+
+add_subdirectory("${CMAKE_SOURCE_DIR}/shared")
+include_directories("${CMAKE_SOURCE_DIR}/shared")
+link_libraries(shared)
+
 ### Executables #############################################
 
 add_subdirectory("${CMAKE_SOURCE_DIR}/executables/web_view")
+add_subdirectory("${CMAKE_SOURCE_DIR}/executables/font_renderer")
 
 #############################################################

@@ -11,14 +11,12 @@
 WebViewContainer::WebViewContainer(
 	std::shared_ptr<MFA::Blob> const & htmlBlob,
 	litehtml::position clip,
-	std::shared_ptr<LineRenderer> lineRenderer,
 	std::shared_ptr<FontRenderer> fontRenderer,
 	std::shared_ptr<SolidFillRenderer> solidFillRenderer
 )
 	: litehtml::document_container()
 	, _clip(clip)
 	, _fontRenderer(std::move(fontRenderer))
-	, _lineRenderer(std::move(lineRenderer))
 	, _solidFillRenderer(std::move(solidFillRenderer))
 {
 	char const * htmlText = htmlBlob->As<char const>();
@@ -37,8 +35,10 @@ WebViewContainer::WebViewContainer(
 
     float halfWidth = windowWidth * 0.5f;
     float halfHeight = windowHeight * 0.5f;
-    _modelMat = glm::transpose(glm::scale(glm::identity<glm::mat4>(), glm::vec3{1.0f / halfWidth, 1.0f / halfHeight, 1.0f }) *
-        glm::translate(glm::identity<glm::mat4>(), glm::vec3{ -halfWidth, -halfHeight, 0.0f }));
+    _modelMat = glm::transpose(
+    	glm::scale(glm::identity<glm::mat4>(), glm::vec3{1.0f / halfWidth, 1.0f / halfHeight, 1.0f }) *
+        glm::translate(glm::identity<glm::mat4>(), glm::vec3{ -halfWidth, -halfHeight, 0.0f })
+    );
 
     MFA_LOG_INFO("Start!");
 }

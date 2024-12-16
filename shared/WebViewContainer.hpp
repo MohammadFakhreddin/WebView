@@ -2,11 +2,9 @@
 
 #include "utils/ConsolasFontRenderer.hpp"
 #include "pipeline/SolidFillPipeline.hpp"
-#include "utils/LineRenderer.hpp"
 #include "utils/SolidFillRenderer.hpp"
 
 #include "litehtml.h"
-
 
 class WebViewContainer : public litehtml::document_container
 {
@@ -14,14 +12,12 @@ class WebViewContainer : public litehtml::document_container
 public:
 
 	using FontRenderer = MFA::ConsolasFontRenderer;
-	using LineRenderer = MFA::LineRenderer;
 	using SolidFillRenderer = MFA::SolidFillRenderer;
 
 	// TODO: We need an image renderer class as well
     explicit WebViewContainer(
         std::shared_ptr<MFA::Blob> const & htmlBlob,
         litehtml::position clip,
-        std::shared_ptr<LineRenderer> lineRenderer,
         std::shared_ptr<FontRenderer> fontRenderer,
         std::shared_ptr<SolidFillRenderer> solidFillRenderer
 	);
@@ -165,7 +161,6 @@ private:
 
 	litehtml::position _clip {};
 	std::shared_ptr<FontRenderer> _fontRenderer = nullptr;
-	std::shared_ptr<LineRenderer> _lineRenderer = nullptr;
 	std::shared_ptr<SolidFillRenderer> _solidFillRenderer = nullptr;
 
 	litehtml::document::ptr _html = nullptr;
@@ -176,17 +171,7 @@ private:
 	std::vector<std::function<void(MFA::RT::CommandRecordState&)>> _drawCalls{};
 
 	std::vector<float> _fontScales{};
+    glm::mat4 _modelMat{};
 
 	bool _isDirty = true;
-
-    // This is the reference width and height
-    //int _refWidth = -1;
-    //int _refHeight = -1;
-
-    //float _scale = 0.0f;
-
-    //float _scaleWidth = 0.0f;
-    //float _scaleHeight = 0.0f;
-
-    glm::mat4 _modelMat{};
 };

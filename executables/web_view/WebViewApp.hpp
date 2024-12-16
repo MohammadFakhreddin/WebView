@@ -32,7 +32,6 @@ private:
 	std::unique_ptr<WebViewContainer> _webViewContainer;
 
 	std::shared_ptr<MFA::ConsolasFontRenderer> _fontRenderer;
-	std::shared_ptr<MFA::LineRenderer> _lineRenderer;
 	std::shared_ptr<MFA::SolidFillRenderer> _solidFillRenderer;
 
 	std::vector<litehtml::element::ptr> _buttons{};
