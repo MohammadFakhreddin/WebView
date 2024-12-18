@@ -6,10 +6,12 @@
 
 #include <ranges>
 
+using namespace MFA;
+
 //=========================================================================================
 
 WebViewContainer::WebViewContainer(
-	std::shared_ptr<MFA::Blob> const & htmlBlob,
+	std::shared_ptr<Blob> const & htmlBlob,
 	litehtml::position clip,
 	std::shared_ptr<LineRenderer> lineRenderer,
 	std::shared_ptr<FontRenderer> fontRenderer,
@@ -31,7 +33,7 @@ WebViewContainer::WebViewContainer(
     auto const bodyTag = GetElementByTag("body");
     MFA_ASSERT(bodyTag != nullptr);
 
-    auto * device = MFA::LogicalDevice::Instance;
+    auto * device = LogicalDevice::Instance;
     auto const windowWidth = static_cast<float>(device->GetWindowWidth());
     auto const windowHeight = static_cast<float>(device->GetWindowHeight());
 
@@ -53,7 +55,7 @@ void WebViewContainer::Update()
 {
 	if (_isDirty == true)
 	{
-		MFA::RB::DeviceWaitIdle(MFA::LogicalDevice::Instance->GetVkDevice());
+		RB::DeviceWaitIdle(LogicalDevice::Instance->GetVkDevice());
 		_isDirty = false;
 		_drawCalls.clear();
 		_textDataList.clear();
@@ -66,7 +68,7 @@ void WebViewContainer::Update()
 
 //=========================================================================================
 
-void WebViewContainer::UpdateBuffers(const MFA::RT::CommandRecordState& recordState)
+void WebViewContainer::UpdateBuffers(const RT::CommandRecordState& recordState)
 {
 	for (auto & textData : _textDataList)
 	{
@@ -81,7 +83,7 @@ void WebViewContainer::UpdateBuffers(const MFA::RT::CommandRecordState& recordSt
 
 //=========================================================================================
 
-void WebViewContainer::DisplayPass(MFA::RT::CommandRecordState& recordState)
+void WebViewContainer::DisplayPass(RT::CommandRecordState& recordState)
 {
 	for (auto & drawCall : _drawCalls)
 	{
@@ -112,8 +114,7 @@ litehtml::uint_ptr WebViewContainer::create_font(
 )
 {
 	float const scale = static_cast<float>(size) / static_cast<float>(get_default_font_size());
-    float const windowHeight = static_cast<float>(MFA::LogicalDevice::Instance->GetWindowHeight());
-	fm->height = static_cast<int>(_fontRenderer->TextHeight(scale) * windowHeight * 0.5f);
+    fm->height = static_cast<int>(_fontRenderer->TextHeight(scale));
 	fm->draw_spaces = false;
 	_fontScales.emplace_back(scale);
 	return _fontScales.size();
@@ -142,10 +143,10 @@ void WebViewContainer::draw_borders(
 	bool root
 )
 {
-	//_drawCalls.emplace_back([this, draw_pos, borders](MFA::RT::CommandRecordState& recordState)->void
+	//_drawCalls.emplace_back([this, draw_pos, borders](RT::CommandRecordState& recordState)->void
 	//{
-	//	auto const windowWidth = static_cast<float>(MFA::LogicalDevice::Instance->GetWindowWidth());
-	//	auto const windowHeight = static_cast<float>(MFA::LogicalDevice::Instance->GetWindowHeight());
+	//	auto const windowWidth = static_cast<float>(LogicalDevice::Instance->GetWindowWidth());
+	//	auto const windowHeight = static_cast<float>(LogicalDevice::Instance->GetWindowHeight());
 
 	//	glm::vec3 topLeft {
 	//		static_cast<float>(draw_pos.x) / windowWidth,
@@ -259,7 +260,7 @@ void WebViewContainer::draw_solid_fill(
     float const bottomRightY = (float)layer.border_radius.bottom_right_y;
 	auto const bottomRightRadius = glm::vec2{bottomRightX, bottomRightY};
 
-	std::shared_ptr<MFA::LocalBufferTracker> bufferTracker = _solidFillRenderer->AllocateBuffer(
+	std::shared_ptr<LocalBufferTracker> bufferTracker = _solidFillRenderer->AllocateBuffer(
 		topLeftPos,
 		bottomLeftPos,
 		topRightPos,
@@ -277,11 +278,11 @@ void WebViewContainer::draw_solid_fill(
 	);
 	_solidFillBuffers.emplace_back(bufferTracker);
 
-	_drawCalls.emplace_back([this, bufferTracker](MFA::RT::CommandRecordState& recordState)->void
+	_drawCalls.emplace_back([this, bufferTracker](RT::CommandRecordState& recordState)->void
 	{
         _solidFillRenderer->Draw(
             recordState,
-            MFA::SolidFillPipeline::PushConstants{.model = _modelMat},
+            SolidFillPipeline::PushConstants{.model = _modelMat},
             *bufferTracker
         );
 	});
@@ -312,9 +313,13 @@ void WebViewContainer::draw_text(
 	_fontRenderer->AddText(*textData, text, x, y, textParams);
 	_textDataList.emplace_back(textData);
 
-	_drawCalls.emplace_back([this, textData](MFA::RT::CommandRecordState& recordState)->void
+	_drawCalls.emplace_back([this, textData](RT::CommandRecordState& recordState)->void
 	{
-		_fontRenderer->Draw(recordState, *textData);
+		_fontRenderer->Draw(
+            recordState,
+            TextOverlayPipeline::PushConstants{ .model = _modelMat },
+            *textData
+        );
 	});
 }
 
@@ -322,7 +327,7 @@ void WebViewContainer::draw_text(
 
 void WebViewContainer::get_client_rect(litehtml::position& client) const
 {
-	auto* device = MFA::LogicalDevice::Instance;
+	auto* device = LogicalDevice::Instance;
 	client.width = device->GetWindowWidth();
 	client.height = device->GetWindowHeight();
 	client.x = 0;
@@ -431,10 +436,9 @@ void WebViewContainer::set_cursor(const char* cursor)
 
 int WebViewContainer::text_width(const char* text, litehtml::uint_ptr hFont)
 {
-    auto const windowWidth = static_cast<float>(MFA::LogicalDevice::Instance->GetWindowWidth()) * 0.5f;
-	FontRenderer::TextParams params{};
+    FontRenderer::TextParams params{};
 	params.scale = _fontScales[hFont - 1];
-	return static_cast<int>(_fontRenderer->TextWidth(std::string_view{text, strlen(text)}, params) * windowWidth);
+    return static_cast<int>(_fontRenderer->TextWidth(std::string_view{ text, strlen(text) }, params));
 }
 
 //=========================================================================================

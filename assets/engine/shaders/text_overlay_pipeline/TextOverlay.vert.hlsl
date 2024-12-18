@@ -12,10 +12,20 @@ struct Output
     [[vk::location(1)]] float3 color : COLOR;
 };
 
+struct PushConsts
+{    
+    float4x4 model;
+};
+[[vk::push_constant]]
+cbuffer {
+    PushConsts pushConsts;
+};
+
+
 Output main(Input input)
 {
     Output output;
-    output.position = float4(input.position, 0.0, 1.0);
+    output.position = pushConsts.model * float4(input.position.x, input.position.y, 0.0, 1.0);
     output.uv = input.uv;
     output.color = input.color;
     return output;

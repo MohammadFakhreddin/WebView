@@ -17,6 +17,11 @@ namespace MFA
             glm::vec3 color{};
         };
 
+        struct PushConstants
+        {
+            glm::mat4 model{};
+        };
+
         explicit TextOverlayPipeline(
             std::shared_ptr<DisplayRenderPass> displayRenderPass,
             std::shared_ptr<RT::SamplerGroup> sampler
@@ -31,6 +36,8 @@ namespace MFA
 
         [[nodiscard]]
         RT::DescriptorSetGroup CreateDescriptorSet(RT::GpuTexture const & texture);
+
+        void SetPushConstant(RT::CommandRecordState & recordState, PushConstants const & pushConstant) const;
 
     private:
 
