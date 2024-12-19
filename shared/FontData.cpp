@@ -4,8 +4,7 @@ namespace Shared
 {
     //==================================================================================================================
 
-    FontData::FontData(int const glyphCount, GlyphData *glyphData, int const unitsPerEM)
-        : unitsPerEm(unitsPerEM)
+    FontData::FontData(int const glyphCount, GlyphData *glyphData, int const unitsPerEM) : unitsPerEm(unitsPerEM)
     {
         MFA_ASSERT(glyphCount >= 0);
         _glyphs.reserve(glyphCount);

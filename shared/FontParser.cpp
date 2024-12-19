@@ -1,5 +1,7 @@
 #include "FontParser.hpp"
 
+#include "BinaryReader.hpp"
+
 #include <unordered_map>
 
 namespace Shared::FontParser
@@ -281,7 +283,7 @@ namespace Shared::FontParser
     static void ReadCompoundGlyph(
         BinaryReader & reader,
         uint32_t const * glyphLocations,
-        uint32_t glyphIndex,
+        uint32_t const glyphIndex,
         FontData::GlyphData & outGlyphData
     )
     {
@@ -325,14 +327,14 @@ namespace Shared::FontParser
     void ReadGlyph(
         BinaryReader & reader,
         uint32_t const * glyphLocations,
-        uint32_t glyphIndex,
+        uint32_t const glyphIndex,
         FontData::GlyphData & outGlyphData
     )
     {
-        uint32_t glyphLocation = glyphLocations[glyphIndex];
+        uint32_t const glyphLocation = glyphLocations[glyphIndex];
 
         reader.GoTo(glyphLocation);
-        int contourCount = reader.ReadInt16();
+        int const contourCount = reader.ReadInt16();
 
         // Glyph is either simple or compound
         // * Simple: outline data is stored here directly
@@ -353,7 +355,7 @@ namespace Shared::FontParser
 
     void ReadAllGlyphs(
         BinaryReader & reader,
-        uint32_t * glyphLocations,
+        uint32_t const * glyphLocations,
         uint32_t const mappingsCount,
         GlyphMap const * mappings,
         FontData::GlyphData * outGlyphDataList
@@ -370,4 +372,295 @@ namespace Shared::FontParser
 
     //==================================================================================================================
 
-}
+    static void GetAllGlyphLocations(
+        BinaryReader & reader,
+        int const numGlyphs,
+        int const bytesPerEntry,
+        uint32_t const localTableLocation,
+        uint32_t const glyphTableLocation,
+        uint32_t * glyphLocations
+    )
+    {
+        bool const isTwoByteEntry = bytesPerEntry == 2;
+
+        for (int glyphIndex = 0; glyphIndex < numGlyphs; glyphIndex++)
+        {
+            reader.GoTo(localTableLocation + glyphIndex * bytesPerEntry);
+            // If 2-byte format is used, the stored location is half of actual location (so multiply by 2)
+            auto const glyphDataOffset = isTwoByteEntry ? reader.ReadUInt16() * 2u : reader.ReadUInt32();
+            glyphLocations[glyphIndex] = glyphTableLocation + glyphDataOffset;
+        }
+    }
+
+    //==================================================================================================================
+
+    // Create a lookup from unicode to font's internal glyph index
+    static std::vector<GlyphMap> GetUnicodeToGlyphIndexMappings(BinaryReader & reader, uint32_t const cmapOffset)
+    {
+        std::vector<GlyphMap> glyphPairs {};
+        reader.GoTo(cmapOffset);
+
+        uint version = reader.ReadUInt16();
+        uint numSubtables = reader.ReadUInt16(); // font can contain multiple character maps for different platforms
+
+        // --- Read through metadata for each character map to find the one we want to use ---
+        uint cmapSubtableOffset = 0;
+        int selectedUnicodeVersionID = -1;
+
+        for (int i = 0; i < numSubtables; i++)
+        {
+            int platformID = reader.ReadUInt16();
+            int platformSpecificID = reader.ReadUInt16();
+            uint offset = reader.ReadUInt32();
+
+            // Unicode encoding
+            if (platformID == 0)
+            {
+                // Use highest supported unicode version
+                // if (platformSpecificID is 0 or 1 or 3 or 4 && platformSpecificID > selectedUnicodeVersionID)
+                if (
+                    (platformSpecificID == 0 || platformSpecificID == 1 || platformSpecificID == 3 || platformSpecificID == 4) &&
+                    platformSpecificID > selectedUnicodeVersionID)
+                {
+                    cmapSubtableOffset = offset;
+                    selectedUnicodeVersionID = platformSpecificID;
+                }
+            }
+            // Microsoft Encoding
+            else if (platformID == 3 && selectedUnicodeVersionID == -1)
+            {
+                if (platformSpecificID == 1 || platformSpecificID == 10)
+                {
+                    cmapSubtableOffset = offset;
+                }
+            }
+        }
+
+        if (cmapSubtableOffset == 0)
+        {
+            MFA_LOG_ERROR("Font does not contain supported character map type (TODO)");
+        }
+
+        // Go to the character map
+        reader.GoTo(cmapOffset + cmapSubtableOffset);
+        int format = reader.ReadUInt16();
+        bool hasReadMissingCharGlyph = false;
+
+        if (format != 12 && format != 4)
+        {
+            MFA_LOG_ERROR("Font cmap format not supported (TODO): " + format);
+        }
+
+        // ---- Parse Format 4 ----
+        if (format == 4)
+        {
+            int length = reader.ReadUInt16();
+            int languageCode = reader.ReadUInt16();
+            // Number of contiguous segments of character codes
+            int segCount2X = reader.ReadUInt16();
+            int segCount = segCount2X / 2;
+            reader.Skip<uint8_t>(6); // Skip: searchRange, entrySelector, rangeShift
+
+            // Ending character code for each segment (last = 2^16 - 1)
+            // int[] endCodes = new int[segCount];
+            std::vector<int> endCodes(segCount);
+            for (int i = 0; i < segCount; i++)
+            {
+                endCodes[i] = reader.ReadUInt16();
+            }
+
+            // Skip16BitEntries(1);
+            reader.Skip<uint16_t>(1); // Reserved pad
+
+            // int[] startCodes = new int[segCount];
+            std::vector<int> startCodes(segCount);
+            for (int i = 0; i < segCount; i++)
+            {
+                startCodes[i] = reader.ReadUInt16();
+            }
+
+            // int[] idDeltas = new int[segCount];
+            std::vector<int> idDeltas(segCount);
+            for (int i = 0; i < segCount; i++)
+            {
+                idDeltas[i] = reader.ReadUInt16();
+            }
+
+            // (int offset, int readLoc)[] idRangeOffsets = new (int, int)[segCount];
+            struct IdRangeOffset {int offset; int readLoc; };
+            std::vector<IdRangeOffset> idRangeOffsets(segCount);
+            for (int i = 0; i < segCount; i++)
+            {
+                int readLoc = (int)reader.GetLocation();
+                int offset = reader.ReadUInt16();
+                idRangeOffsets[i] = IdRangeOffset{ .offset = offset, .readLoc = readLoc};
+            }
+
+            for (int i = 0; i < startCodes.size(); i++)
+            {
+                int endCode = endCodes[i];
+                int currCode = startCodes[i];
+
+                if (currCode == 65535) break; // not sure about this (hack to avoid out of bounds on a specific font)
+
+                while (currCode <= endCode)
+                {
+                    int glyphIndex;
+                    // If idRangeOffset is 0, the glyph index can be calculated directly
+                    if (idRangeOffsets[i].offset == 0)
+                    {
+                        glyphIndex = (currCode + idDeltas[i]) % 65536;
+                    }
+                    // Otherwise, glyph index needs to be looked up from an array
+                    else
+                    {
+                        uint readerLocationOld = reader.GetLocation();
+                        int rangeOffsetLocation = idRangeOffsets[i].readLoc + idRangeOffsets[i].offset;
+                        int glyphIndexArrayLocation = 2 * (currCode - startCodes[i]) + rangeOffsetLocation;
+
+                        reader.GoTo(glyphIndexArrayLocation);
+                        glyphIndex = reader.ReadUInt16();
+
+                        if (glyphIndex != 0)
+                        {
+                            glyphIndex = (glyphIndex + idDeltas[i]) % 65536;
+                        }
+
+                        reader.GoTo(readerLocationOld);
+                    }
+
+                    glyphPairs.emplace_back((uint32_t)glyphIndex, (uint32_t)currCode);
+                    hasReadMissingCharGlyph |= glyphIndex == 0;
+                    currCode++;
+                }
+            }
+        }
+        // ---- Parse Format 12 ----
+        else if (format == 12)
+        {
+            reader.Skip<uint8_t>(10); // Skip: reserved, subtableByteLengthInlcudingHeader, languageCode
+            uint numGroups = reader.ReadUInt32();
+
+            for (int i = 0; i < numGroups; i++)
+            {
+                uint startCharCode = reader.ReadUInt32();
+                uint endCharCode = reader.ReadUInt32();
+                uint startGlyphIndex = reader.ReadUInt32();
+
+                uint numChars = endCharCode - startCharCode + 1;
+                for (int charCodeOffset = 0; charCodeOffset < numChars; charCodeOffset++)
+                {
+                    uint charCode = (uint)(startCharCode + charCodeOffset);
+                    uint glyphIndex = (uint)(startGlyphIndex + charCodeOffset);
+
+                    glyphPairs.emplace_back(glyphIndex, charCode);
+                    hasReadMissingCharGlyph |= glyphIndex == 0;
+                }
+            }
+        }
+
+        if (!hasReadMissingCharGlyph)
+        {
+            glyphPairs.emplace_back(0, 65535);
+        }
+
+        return glyphPairs;
+    }
+
+    //==================================================================================================================
+
+    FontData Parse(std::shared_ptr<MFA::Blob> rawFontData)
+    {
+        BinaryReader reader(std::move(rawFontData));
+
+        auto tableLocationLookup = ReadTableLocations(reader);
+
+        MFA_ASSERT(tableLocationLookup.contains("glyf"));
+        auto const glyphTableLocation = tableLocationLookup["glyf"];
+        MFA_ASSERT(tableLocationLookup.contains("loca"));
+        auto const locaTableLocation = tableLocationLookup["loca"];
+        MFA_ASSERT(tableLocationLookup.contains("cmap"));
+        auto const cmapLocation = tableLocationLookup["cmap"];
+
+        // ---- Read Head Table ----
+        reader.GoTo(tableLocationLookup["head"]);
+        reader.Skip<uint8_t>(18);
+        // Design units to Em size (range from 64 to 16384)
+        int unitsPerEm = reader.ReadUInt16();
+        reader.Skip<uint8_t>(30);
+        // Number of bytes used by the offsets in the 'loca' table (for looking up glyph locations)
+        int numBytesPerLocationLookup = (reader.ReadInt16() == 0 ? 2 : 4);
+
+        // --- Read 'maxp' table ---
+        reader.GoTo(tableLocationLookup["maxp"]);
+        reader.Skip<uint8_t>(4);
+
+        int const numGlyphs = reader.ReadUInt16();
+        std::vector<uint32_t> glyphLocations(numGlyphs);
+
+        GetAllGlyphLocations(
+            reader,
+            numGlyphs,
+            numBytesPerLocationLookup,
+            locaTableLocation,
+            glyphTableLocation,
+            glyphLocations.data()
+        );
+
+        auto const mappings = GetUnicodeToGlyphIndexMappings(reader, cmapLocation);
+        std::vector<FontData::GlyphData> glyphs(mappings.size());
+        ReadAllGlyphs(reader, glyphLocations.data(), mappings.size(), mappings.data(), glyphs.data());
+
+        {
+            struct LayoutData {int advance; int left;};
+            std::vector<LayoutData> layoutData(numGlyphs);
+
+            // Get number of metrics from the 'hhea' table
+            reader.GoTo(tableLocationLookup["hhea"]);
+
+            reader.Skip<uint8_t>(8); // unused: version, ascent, descent
+            int lineGap = reader.ReadInt16();
+            int advanceWidthMax = reader.ReadInt16();
+            reader.Skip<uint8_t>(22); // unused: minLeftSideBearing, minRightSideBearing, xMaxExtent, caretSlope/Offset, reserved, metricDataFormat
+            int numAdvanceWidthMetrics = reader.ReadInt16();
+
+            // Get the advance width and leftsideBearing metrics from the 'hmtx' table
+            reader.GoTo(tableLocationLookup["hmtx"]);
+            int lastAdvanceWidth = 0;
+
+            for (int i = 0; i < numAdvanceWidthMetrics; i++)
+            {
+                int advanceWidth = reader.ReadUInt16();
+                int leftSideBearing = reader.ReadInt16();
+                lastAdvanceWidth = advanceWidth;
+
+                layoutData[i] = LayoutData{ .advance = advanceWidth, .left = leftSideBearing};
+            }
+
+            // Some fonts have a run of monospace characters at the end
+            int numRem = numGlyphs - numAdvanceWidthMetrics;
+
+            for (int i = 0; i < numRem; i++)
+            {
+                int leftSideBearing = reader.ReadInt16();
+                int glyphIndex = numAdvanceWidthMetrics + i;
+
+                layoutData[glyphIndex] = LayoutData{ .advance = lastAdvanceWidth, .left = leftSideBearing};
+            }
+
+            // Apply
+            for (auto & c : glyphs)
+            {
+                c.AdvanceWidth = layoutData[c.GlyphIndex].advance;
+                c.LeftSideBearing = layoutData[c.GlyphIndex].left;
+            }
+        }
+
+        FontData fontData((int)glyphs.size(), glyphs.data(), unitsPerEm);
+        return fontData;
+
+    }
+
+    //==================================================================================================================
+
+} // namespace Shared::FontParser

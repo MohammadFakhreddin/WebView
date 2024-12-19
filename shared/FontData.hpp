@@ -39,9 +39,9 @@ namespace Shared
         {
             uint32_t UnicodeValue{};
             uint32_t GlyphIndex{};
-            std::vector<Point> Points{};
-            std::vector<int> ContourEndIndices{};
-            int AdvanceWidth{};
+            std::vector<Point> Points{};                // Control points for the quadratic bezier curve. We need to introduce new points.
+            std::vector<int> ContourEndIndices{};       // Refers to range of indices for each closed contour.
+            int AdvanceWidth{};                         // Space needed for the next glyph.
             int LeftSideBearing{};
 
             int MinX{};
