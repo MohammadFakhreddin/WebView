@@ -30,19 +30,53 @@ WebViewContainer::WebViewContainer(
 		this
 	);
 
-    auto const bodyTag = GetElementByTag("body");
-    MFA_ASSERT(bodyTag != nullptr);
-
     auto * device = LogicalDevice::Instance;
     auto const windowWidth = static_cast<float>(device->GetWindowWidth());
     auto const windowHeight = static_cast<float>(device->GetWindowHeight());
 
+    float scaleFactorX = 1.0f;
+    float scaleFactorY = 1.0f;
+
+    auto const bodyTag = GetElementByTag("body");
+    if (bodyTag != nullptr)
+    {
+        try
+        {
+            auto bodyWidth = std::stoi(bodyTag->get_attr("width", "-1"));
+            if (bodyWidth <= 0)
+            {
+                bodyWidth = windowWidth;
+            }
+            float wScale = (float)windowWidth / bodyWidth;
+            scaleFactorX = wScale;
+
+            auto bodyHeight = std::stoi(bodyTag->get_attr("height", "-1"));
+            if (bodyHeight <= 0)
+            {
+                bodyHeight = windowHeight;
+            }
+            float hScale = (float)windowHeight / bodyHeight;
+            scaleFactorY = hScale;
+        }
+        catch (const std::exception & e)
+        {
+            MFA_LOG_WARN("Failed to parse body width and height with error\n %s", e.what());
+        }
+    }
+
+    float scaleFactor = std::min(scaleFactorX, scaleFactorY);
+    scaleFactor = std::max(scaleFactor, 1.0f);
+
     float halfWidth = windowWidth * 0.5f;
     float halfHeight = windowHeight * 0.5f;
-    _modelMat = glm::transpose(glm::scale(glm::identity<glm::mat4>(), glm::vec3{1.0f / halfWidth, 1.0f / halfHeight, 1.0f }) *
-        glm::translate(glm::identity<glm::mat4>(), glm::vec3{ -halfWidth, -halfHeight, 0.0f }));
+    float scaleX = (1.0f / halfWidth) * scaleFactor;
+    float scaleY = (1.0f / halfHeight) * scaleFactor;
+    _modelMat = glm::transpose(
+        glm::scale(glm::identity<glm::mat4>(), glm::vec3{scaleX, scaleY, 1.0f }) *
+        glm::translate(glm::identity<glm::mat4>(), glm::vec3{ -halfWidth, -halfHeight, 0.0f })
+    );
 
-    MFA_LOG_INFO("Start!");
+    //MFA_LOG_INFO("Start!");
 }
 
 //=========================================================================================
@@ -184,13 +218,13 @@ void WebViewContainer::draw_image(
 	const std::string& base_url
 )
 {
-	MFA_LOG_INFO(
-		"url=%s, base_url=%s, layer.width: %d, layer.height: %d"
-		, url.c_str()
-		, base_url.c_str()
-		, layer.border_box.width
-		, layer.border_box.height
-	);
+	//MFA_LOG_INFO(
+	//	"url=%s, base_url=%s, layer.width: %d, layer.height: %d"
+	//	, url.c_str()
+	//	, base_url.c_str()
+	//	, layer.border_box.width
+	//	, layer.border_box.height
+	//);
 }
 
 //=========================================================================================
@@ -352,7 +386,7 @@ int WebViewContainer::get_default_font_size() const
 
 void WebViewContainer::get_image_size(const char* src, const char* baseurl, litehtml::size& sz)
 {
-	MFA_LOG_INFO("src: %s, baseurl: %s", src, baseurl);
+	//MFA_LOG_INFO("src: %s, baseurl: %s", src, baseurl);
 	sz.width = 100;
 	sz.height = 100;
 }
@@ -385,7 +419,7 @@ void WebViewContainer::link(const std::shared_ptr<litehtml::document>& doc, cons
 
 void WebViewContainer::load_image(const char* src, const char* baseurl, bool redraw_on_ready)
 {
-	MFA_LOG_INFO("src: %s, baseurl: %s", src, baseurl);
+	//MFA_LOG_INFO("src: %s, baseurl: %s", src, baseurl);
 }
 
 //=========================================================================================
@@ -509,7 +543,7 @@ litehtml::element::ptr WebViewContainer::GetElementByTag(char const * tag, liteh
 
     for (auto & child : element->children())
     {
-        auto const result = GetElementById(tag, child);
+        auto const result = GetElementByTag(tag, child);
         if (result != nullptr)
         {
             return result;

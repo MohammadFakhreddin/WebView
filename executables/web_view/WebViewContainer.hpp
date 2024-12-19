@@ -7,7 +7,7 @@
 
 #include "litehtml.h"
 
-
+// Idea: I can port this for unity
 class WebViewContainer : public litehtml::document_container
 {
 
@@ -178,15 +178,6 @@ private:
 	std::vector<float> _fontScales{};
 
 	bool _isDirty = true;
-
-    // This is the reference width and height
-    //int _refWidth = -1;
-    //int _refHeight = -1;
-
-    //float _scale = 0.0f;
-
-    //float _scaleWidth = 0.0f;
-    //float _scaleHeight = 0.0f;
 
     glm::mat4 _modelMat{};
 };
