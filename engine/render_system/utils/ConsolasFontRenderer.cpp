@@ -11,7 +11,7 @@ namespace MFA
 
     //------------------------------------------------------------------
 
-    ConsolasFontRenderer::ConsolasFontRenderer(std::shared_ptr<TextOverlayPipeline> pipeline)
+    ConsolasFontRenderer::ConsolasFontRenderer(std::shared_ptr<Pipeline> pipeline)
         : _pipeline(std::move(pipeline))
     {
         CreateFontTextureBuffer();
@@ -21,7 +21,7 @@ namespace MFA
         float maxY = std::numeric_limits<float>::min();
         for (int i = 0; i < STB_FONT_consolas_24_latin1_NUM_CHARS; ++i)
         {
-            stb_fontchar* charData = &_stbFontData[i];
+            stb_fontchar * charData = &_stbFontData[i];
             minY = std::min<float>(charData->y0, minY);
             minY = std::min<float>(charData->y1, minY);
 
@@ -31,7 +31,7 @@ namespace MFA
 
         _fontHeight = std::abs(maxY - minY);
     }
-        
+
     //------------------------------------------------------------------
 
     std::unique_ptr<ConsolasFontRenderer::TextData> ConsolasFontRenderer::AllocateTextData(int maxCharCount)
@@ -39,9 +39,9 @@ namespace MFA
         auto const device = LogicalDevice::Instance;
 
         auto const vertexBuffer = RB::CreateVertexBufferGroup(
-            device->GetVkDevice(), 
-            device->GetPhysicalDevice(), 
-            maxCharCount * sizeof(TextOverlayPipeline::Vertex),
+            device->GetVkDevice(),
+            device->GetPhysicalDevice(),
+            maxCharCount * sizeof(Pipeline::Vertex),
             LogicalDevice::Instance->GetMaxFramePerFlight()
         );
 
@@ -57,7 +57,7 @@ namespace MFA
             .vertexData = LocalBufferTracker(vertexBuffer, vertexStageBuffer),
             .maxLetterCount = maxCharCount
         });
-        
+
         return textData;
     }
 
@@ -65,30 +65,20 @@ namespace MFA
 
     bool ConsolasFontRenderer::AddText(
         TextData & inOutData,
-        std::string_view const & text, 
-        float x, 
-        float y, 
+        std::string_view const & text,
+        float x,
+        float y,
         TextParams params
     )
     {
-        auto const windowWidth = static_cast<float>(LogicalDevice::Instance->GetWindowWidth());
-        auto const windowHeight = static_cast<float>(LogicalDevice::Instance->GetWindowHeight());
-
-        auto const windowMin = std::min(windowWidth, windowHeight);
-
         int letterRange = inOutData.letterRange.empty() == false ? inOutData.letterRange.back() : 0;
         int letterRangeBegin = letterRange;
 
-        auto * mapped = &reinterpret_cast<TextOverlayPipeline::Vertex*>(inOutData.vertexData->Data())[letterRange * 4];
+        auto * mapped = &reinterpret_cast<Pipeline::Vertex*>(inOutData.vertexData->Data())[letterRange * 4];
         auto* mappedBegin = mapped;
 
-        const float charW = WidthModifier * params.scale / windowMin;
-        const float charH = HeightModifier * params.scale / windowMin;
-
-        float fbW = windowWidth;
-        float fbH = windowHeight;
-        x = (x / fbW * 2.0f) - 1.0f;
-        y = (y / fbH * 2.0f) - 1.0f;
+        const float charW = WidthModifier * params.scale;
+        const float charH = HeightModifier * params.scale;
 
         bool success = true;
 
@@ -191,6 +181,7 @@ namespace MFA
 
     void ConsolasFontRenderer::Draw(
         RT::CommandRecordState& recordState,
+        Pipeline::PushConstants const & pushConstants,
         TextData& data
     ) const
     {
@@ -217,11 +208,7 @@ namespace MFA
 
     float ConsolasFontRenderer::TextWidth(std::string_view const& text, TextParams params)
     {
-        auto const windowWidth = static_cast<float>(LogicalDevice::Instance->GetWindowWidth());
-        auto const windowHeight = static_cast<float>(LogicalDevice::Instance->GetWindowHeight());
-        auto const windowMin = std::min(windowWidth, windowHeight);
-
-        const float charW = WidthModifier * params.scale / windowMin;
+        const float charW = WidthModifier * params.scale;
 
         float textWidth = 0;
         for (auto letter : text)
@@ -241,11 +228,7 @@ namespace MFA
 
     float ConsolasFontRenderer::TextHeight(float const textScale) const
     {
-        auto const windowWidth = static_cast<float>(LogicalDevice::Instance->GetWindowWidth());
-        auto const windowHeight = static_cast<float>(LogicalDevice::Instance->GetWindowHeight());
-        auto const windowMin = std::min(windowWidth, windowHeight);
-
-    	const float charH = HeightModifier * textScale / windowMin;
+        const float charH = HeightModifier * textScale;
         return charH * _fontHeight;
     }
 

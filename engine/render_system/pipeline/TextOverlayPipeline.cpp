@@ -108,6 +108,22 @@ RT::DescriptorSetGroup TextOverlayPipeline::CreateDescriptorSet(RT::GpuTexture c
 
 //-------------------------------------------------------------------------------------------------
 
+void TextOverlayPipeline::SetPushConstant(
+    RT::CommandRecordState& recordState,
+    PushConstants const& pushConstant
+) const
+{
+    RB::PushConstants(
+        recordState,
+        _pipeline->pipelineLayout,
+        VK_SHADER_STAGE_VERTEX_BIT,
+        0,
+        Alias{ pushConstant }
+    );
+}
+
+//-------------------------------------------------------------------------------------------------
+
 void TextOverlayPipeline::CreatePipeline()
 {
 	// Vertex shader
@@ -189,6 +205,15 @@ void TextOverlayPipeline::CreatePipeline()
 	pipelineOptions.frontFace = VK_FRONT_FACE_CLOCKWISE;
 	pipelineOptions.depthStencil.depthTestEnable = false;
 	pipelineOptions.depthStencil.depthWriteEnable = false;
+
+    std::vector<VkPushConstantRange> pushConstantRanges{};
+    {
+        pushConstantRanges.emplace_back();
+        auto & pushConstant = pushConstantRanges.back();
+        pushConstant.size = sizeof(PushConstants);
+        pushConstant.offset = 0;
+        pushConstant.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+    }
 	
 	// pipeline layout
 	std::vector<VkDescriptorSetLayout> setLayout{_descriptorLayout->descriptorSetLayout};
@@ -197,8 +222,8 @@ void TextOverlayPipeline::CreatePipeline()
 		LogicalDevice::Instance->GetVkDevice(),
 		setLayout.size(),
 		setLayout.data(),
-		0,
-		nullptr
+		pushConstantRanges.size(),
+        pushConstantRanges.data()
 	);
 
 	auto surfaceCapabilities = LogicalDevice::Instance->GetSurfaceCapabilities();

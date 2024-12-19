@@ -14,6 +14,8 @@ namespace MFA
     {
     public:
 
+        using Pipeline = TextOverlayPipeline;
+
         struct TextData
         {
             std::vector<int> letterRange{};
@@ -21,7 +23,7 @@ namespace MFA
             const int maxLetterCount;
         };
 
-        explicit ConsolasFontRenderer(std::shared_ptr<TextOverlayPipeline> pipeline);
+        explicit ConsolasFontRenderer(std::shared_ptr<Pipeline> pipeline);
 
         std::unique_ptr<TextData> AllocateTextData(int maxCharCount = 2048);
 
@@ -49,6 +51,7 @@ namespace MFA
 
         void Draw(
             RT::CommandRecordState& recordState,
+            Pipeline::PushConstants const & pushConstants,
             TextData & data
         ) const;
 
@@ -68,7 +71,7 @@ namespace MFA
         
         std::shared_ptr<RT::SamplerGroup> _fontSampler{};
 
-        std::shared_ptr<TextOverlayPipeline> _pipeline{};
+        std::shared_ptr<Pipeline> _pipeline{};
 
         RT::DescriptorSetGroup _descriptorSet{};
 
