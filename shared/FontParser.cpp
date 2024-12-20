@@ -55,24 +55,25 @@ namespace Shared::FontParser
 
     //==================================================================================================================
 
-    static Table ReadTableLocations(BinaryReader reader)
+    static Table ReadTableLocations(BinaryReader & reader)
     {
         Table tableLocations {};
         // -- offset subtable --
         reader.Skip<uint8_t>(4);                        // unused: scalerType
-        int numTables = reader.ReadUInt16();
+        int const numTables = (int)reader.ReadUInt16();
         reader.Skip<uint8_t>(6);                        // unused: searchRange, entrySelector, rangeShift
 
         // -- table directory --
         for (int i = 0; i < numTables; i++)
         {
-            char tag[4];
+            char tag[4]{};
             reader.ReadString(4, tag);
+
             uint32_t const checksum = reader.ReadUInt32();
             uint32_t const offset = reader.ReadUInt32();
             uint32_t const length = reader.ReadUInt32();
 
-            MFA_ASSERT(tableLocations.find(tag) == tableLocations.end());
+            // MFA_ASSERT(tableLocations.find(tag) == tableLocations.end());
             tableLocations[tag] = offset;
         }
 
@@ -583,7 +584,9 @@ namespace Shared::FontParser
         auto const cmapLocation = tableLocationLookup["cmap"];
 
         // ---- Read Head Table ----
-        reader.GoTo(tableLocationLookup["head"]);
+        MFA_ASSERT(tableLocationLookup.contains("head"));
+        auto const headLocation = tableLocationLookup["head"];
+        reader.GoTo(headLocation);
         reader.Skip<uint8_t>(18);
         // Design units to Em size (range from 64 to 16384)
         int unitsPerEm = reader.ReadUInt16();

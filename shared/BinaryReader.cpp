@@ -15,7 +15,7 @@ namespace Shared
 
     void BinaryReader::GoTo(Offset const offsetFromOrigin, Offset &previousOffset)
     {
-        previousOffset = _ptr - _data->As<Byte>();
+        previousOffset = (Offset *)_ptr - _data->As<Offset>();
         _ptr = _data->As<Byte>() + offsetFromOrigin * sizeof(Byte);
     }
 
@@ -30,7 +30,7 @@ namespace Shared
 
     BinaryReader::Offset BinaryReader::GetLocation() const
     {
-        return _ptr - _data->As<Byte>();
+        return (Offset *)_ptr - _data->As<Offset>();
     }
 
     //==================================================================================================================
@@ -48,8 +48,9 @@ namespace Shared
 
     BinaryReader::Byte BinaryReader::ReadByte()
     {
-        auto const value = (Byte)*_ptr;
-        _ptr = _ptr + sizeof(Byte);
+        auto * ptr = reinterpret_cast<Byte *>(_ptr);
+        auto const value = *ptr;
+        _ptr = (ptr + 1);
         return value;
     }
 
@@ -57,8 +58,9 @@ namespace Shared
 
     BinaryReader::SByte BinaryReader::ReadSByte()
     {
-        auto const value = (SByte)*_ptr;
-        _ptr = _ptr + sizeof(SByte);
+        auto * ptr = reinterpret_cast<SByte *>(_ptr);
+        auto const value = *ptr;
+        _ptr = (ptr + 1);
         return value;
     }
 
@@ -66,9 +68,10 @@ namespace Shared
 
     BinaryReader::UInt16 BinaryReader::ReadUInt16()
     {
-        auto value = (UInt16)*_ptr;
-        _ptr = _ptr + sizeof(UInt16);
-        if constexpr (isLittleEndian == false)
+        auto * ptr = reinterpret_cast<UInt16 *>(_ptr);
+        auto value = *ptr;
+        _ptr = (ptr + 1);
+        if constexpr (isLittleEndian == true)
         {
             value = ToLittleEndian(value);
         }
@@ -86,9 +89,9 @@ namespace Shared
 
     BinaryReader::UInt32 BinaryReader::ReadUInt32()
     {
-        auto value = (UInt32)*_ptr;
+        auto value = *reinterpret_cast<UInt32 *>(_ptr);
         _ptr = _ptr + sizeof(UInt32);
-        if constexpr (isLittleEndian == false)
+        if constexpr (isLittleEndian == true)
         {
             value = ToLittleEndian(value);
         }

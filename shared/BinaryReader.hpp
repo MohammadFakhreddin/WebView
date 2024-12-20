@@ -60,7 +60,7 @@ namespace Shared
         static UInt16 ToLittleEndian(UInt16 bigEndianValue);
 
         std::shared_ptr<MFA::Blob> _data{};
-        Byte * _ptr{};
+        void * _ptr{};
 
     };
 }
