@@ -1,6 +1,6 @@
 ########################################
 
-set(EXECUTABLE "TextRenderer")
+set(EXECUTABLE "FontRenderer")
 
 set(EXECUTABLE_RESOURCES)
 

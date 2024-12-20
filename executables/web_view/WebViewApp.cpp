@@ -168,7 +168,7 @@ void WebViewApp::Reload()
 
 void WebViewApp::InstantiateWebViewContainer()
 {
-    auto const * path = Path::Instance;
+    auto const path = Path::Instance();
     auto const * device = LogicalDevice::Instance;
 
 	auto const htmlPath = path->Get("web_view/Test.html");

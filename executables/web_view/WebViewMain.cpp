@@ -8,9 +8,7 @@ using namespace MFA;
 
 int main()
 {
-    auto path = Path::Instantiate();
-	
-	LogicalDevice::InitParams params
+    LogicalDevice::InitParams params
 	{
 		.windowWidth = 800,
 		.windowHeight = 600,
