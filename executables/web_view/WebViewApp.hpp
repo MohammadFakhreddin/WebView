@@ -31,7 +31,7 @@ private:
 	std::shared_ptr<MFA::DisplayRenderPass> _displayRenderPass;
 	std::unique_ptr<WebViewContainer> _webViewContainer;
 
-	std::shared_ptr<MFA::ConsolasFontRenderer> _fontRenderer;
+	std::shared_ptr<MFA::CustomFontRenderer> _fontRenderer;
 	std::shared_ptr<MFA::SolidFillRenderer> _solidFillRenderer;
 
 	std::vector<litehtml::element::ptr> _buttons{};

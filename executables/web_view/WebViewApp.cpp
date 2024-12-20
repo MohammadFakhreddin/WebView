@@ -49,7 +49,10 @@ void WebViewApp::Run()
     MFA_ASSERT(fontSampler != nullptr);
 
     auto const fontPipeline = std::make_shared<TextOverlayPipeline>(_displayRenderPass, fontSampler);
-    _fontRenderer = std::make_shared<ConsolasFontRenderer>(fontPipeline);
+    auto const fontPath = Path::Instance()->Get("fonts/PublicSans-Bold.ttf");
+    MFA_ASSERT(std::filesystem::exists(fontPath) == true);
+    auto const fontData = File::Read(fontPath);
+    _fontRenderer = std::make_shared<CustomFontRenderer>(fontPipeline, Alias{fontData->Ptr(), fontData->Len()}, 100.0f);
 
     auto const solidFillPipeline = std::make_shared<SolidFillPipeline>(_displayRenderPass);
     _solidFillRenderer = std::make_shared<SolidFillRenderer>(solidFillPipeline);

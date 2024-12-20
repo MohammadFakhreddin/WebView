@@ -146,9 +146,9 @@ litehtml::uint_ptr WebViewContainer::create_font(
 )
 {
 	float const scale = static_cast<float>(size) / static_cast<float>(get_default_font_size());
-    fm->height = static_cast<int>(_fontRenderer->TextHeight(scale));
+    fm->height = static_cast<int>(_fontRenderer->TextHeight(size));
 	fm->draw_spaces = false;
-	_fontScales.emplace_back(scale);
+	_fontScales.emplace_back(size);
 	return _fontScales.size();
 }
 
@@ -337,7 +337,7 @@ void WebViewContainer::draw_text(
 	textParams.color = ConvertColor(color);
 	textParams.hTextAlign = FontRenderer::HorizontalTextAlign::Left;
 	textParams.vTextAlign = FontRenderer::VerticalTextAlign::Top;
-	textParams.scale = _fontScales[hFont - 1];
+	textParams.fontSizeInPixels = _fontScales[hFont - 1];
 	
 	auto const x = static_cast<float>(pos.x);
 	auto const y = static_cast<float>(pos.y);
@@ -377,7 +377,7 @@ const char* WebViewContainer::get_default_font_name() const
 
 int WebViewContainer::get_default_font_size() const
 {
-	return 14;
+	return (int)FontRenderer::DefaultFontSize;
 }
 
 //=========================================================================================
@@ -468,9 +468,7 @@ void WebViewContainer::set_cursor(const char* cursor)
 
 int WebViewContainer::text_width(const char* text, litehtml::uint_ptr hFont)
 {
-    FontRenderer::TextParams params{};
-	params.scale = _fontScales[hFont - 1];
-    return static_cast<int>(_fontRenderer->TextWidth(std::string_view{ text, strlen(text) }, params));
+    return static_cast<int>(_fontRenderer->TextWidth(std::string_view{ text, strlen(text) }, _fontScales[hFont - 1]));
 }
 
 //=========================================================================================

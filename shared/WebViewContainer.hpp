@@ -1,7 +1,7 @@
 #pragma once
 
-#include "utils/ConsolasFontRenderer.hpp"
 #include "pipeline/SolidFillPipeline.hpp"
+#include "utils/CustomFontRenderer.hpp"
 #include "utils/SolidFillRenderer.hpp"
 
 #include "litehtml.h"
@@ -13,7 +13,7 @@ class WebViewContainer : public litehtml::document_container
 
 public:
 
-	using FontRenderer = MFA::ConsolasFontRenderer;
+	using FontRenderer = MFA::CustomFontRenderer;
 	using SolidFillRenderer = MFA::SolidFillRenderer;
 
 	// TODO: We need an image renderer class as well

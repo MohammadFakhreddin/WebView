@@ -46,6 +46,8 @@ list(
 
     "${CMAKE_CURRENT_SOURCE_DIR}/utils/ConsolasFontRenderer.hpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/utils/ConsolasFontRenderer.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/utils/CustomFontRenderer.hpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/utils/CustomFontRenderer.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/utils/SolidFillRenderer.hpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/utils/SolidFillRenderer.cpp"
 )

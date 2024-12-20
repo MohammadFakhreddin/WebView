@@ -3,6 +3,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #define STB_IMAGE_RESIZE_IMPLEMENTATION
+#define STB_TRUETYPE_IMPLEMENTATION;
 
 #define TINYGLTF_NO_INCLUDE_STB_IMAGE
 #define TINYGLTF_NO_INCLUDE_STB_IMAGE_WRITE
@@ -14,6 +15,7 @@
 #include "stb_image.h"
 #include "stb_image_resize.h"
 #include "stb_image_write.h"
+#include "stb_truetype.h"
 #include "tiny_gltf_loader.h"
 
 #define TINYOBJLOADER_IMPLEMENTATION

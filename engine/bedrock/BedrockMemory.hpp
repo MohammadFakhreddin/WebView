@@ -19,6 +19,13 @@ namespace MFA
     		return reinterpret_cast<U*>(_ptr);
     	}
 
+        template <typename U>
+        [[nodiscard]]
+        U const * As() const
+        {
+            return reinterpret_cast<U const *>(_ptr);
+        }
+
         [[nodiscard]]
         uint8_t * Ptr() const
     	{
