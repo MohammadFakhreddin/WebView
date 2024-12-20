@@ -107,11 +107,11 @@ void WebViewApp::Update(float deltaTime)
 void WebViewApp::Render(MFA::RT::CommandRecordState & recordState)
 {
     auto* device = LogicalDevice::Instance;
-    device->BeginCommandBuffer(
-        recordState,
-        RT::CommandBufferType::Compute
-    );
-    device->EndCommandBuffer(recordState);
+    // device->BeginCommandBuffer(
+    //     recordState,
+    //     RT::CommandBufferType::Compute
+    // );
+    // device->EndCommandBuffer(recordState);
 
     device->BeginCommandBuffer(
         recordState,
