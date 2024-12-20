@@ -68,3 +68,6 @@ protected:                                                      \
 
 #define MFA_CONCAT__IMPL(x_, y_) x_ ## y_
 #define MFA_CONCAT(x_, y_) MFA_CONCAT__IMPL(x_, y_)
+
+#define VALUE(string) #string
+#define TO_LITERAL(string) VALUE(string)

@@ -1,29 +1,38 @@
 #pragma once
+
+#include <filesystem>
 #include <memory>
 #include <string>
 
 //https://stackoverflow.com/questions/4815423/how-do-i-set-the-working-directory-to-the-solution-directory
 namespace MFA
 {
-	class Path
-	{
-	public:
+    class Path
+    {
+    public:
 
-		inline static Path * Instance = nullptr;
+        static std::shared_ptr<Path> Instance();
 
-		static std::unique_ptr<Path> Instantiate();
+        explicit Path();
 
-		explicit Path();
+        ~Path();
 
-		~Path();
+        // Returns correct address based on platform
+        [[nodiscard]]
+        std::string Get(std::string const& address) const;
 
-		// Returns correct address based on platform
-		[[nodiscard]]
-		std::string Get(std::string const& address) const;
+        [[nodiscard]]
+        std::string Get(char const * address) const;
 
-	private:
+        std::string Relative(char const * address) const;
 
-		std::string mAssetPath {};
+        [[nodiscard]]
+        std::string const & AssetPath() const {return mAssetPath;}
 
-	};
+    private:
+
+        inline static std::weak_ptr<Path> _instance {};
+        std::string mAssetPath {};
+
+    };
 };

@@ -70,14 +70,14 @@ namespace MFA
 	{
 		{// Vertex shader
 			bool success = Importer::CompileShaderToSPV(
-				Path::Instance->Get("engine/shaders/solid_fill_pipeline/SolidFillPipeline.vert.hlsl"),
-				Path::Instance->Get("engine/shaders/solid_fill_pipeline/SolidFillPipeline.vert.spv"),
+				Path::Instance()->Get("engine/shaders/solid_fill_pipeline/SolidFillPipeline.vert.hlsl"),
+				Path::Instance()->Get("engine/shaders/solid_fill_pipeline/SolidFillPipeline.vert.spv"),
 				"vert"
 			);
 			MFA_ASSERT(success == true);
 		}
 		auto cpuVertexShader = Importer::ShaderFromSPV(
-			Path::Instance->Get("engine/shaders/solid_fill_pipeline/SolidFillPipeline.vert.spv"),
+			Path::Instance()->Get("engine/shaders/solid_fill_pipeline/SolidFillPipeline.vert.spv"),
 			VK_SHADER_STAGE_VERTEX_BIT,
 			"main"
 		);
@@ -88,14 +88,14 @@ namespace MFA
 
 		{// Fragment shader
 			bool success = Importer::CompileShaderToSPV(
-				Path::Instance->Get("engine/shaders/solid_fill_pipeline/SolidFillPipeline.frag.hlsl"),
-				Path::Instance->Get("engine/shaders/solid_fill_pipeline/SolidFillPipeline.frag.spv"),
+				Path::Instance()->Get("engine/shaders/solid_fill_pipeline/SolidFillPipeline.frag.hlsl"),
+				Path::Instance()->Get("engine/shaders/solid_fill_pipeline/SolidFillPipeline.frag.spv"),
 				"frag"
 			);
 			MFA_ASSERT(success == true);
 		}
 		auto cpuFragmentShader = Importer::ShaderFromSPV(
-			Path::Instance->Get("engine/shaders/solid_fill_pipeline/SolidFillPipeline.frag.spv"),
+			Path::Instance()->Get("engine/shaders/solid_fill_pipeline/SolidFillPipeline.frag.spv"),
 			VK_SHADER_STAGE_FRAGMENT_BIT,
 			"main"
 		);
