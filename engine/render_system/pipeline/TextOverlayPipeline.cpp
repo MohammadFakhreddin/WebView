@@ -198,11 +198,11 @@ void TextOverlayPipeline::CreatePipeline()
 	RB::CreateGraphicPipelineOptions pipelineOptions{};
 	pipelineOptions.useStaticViewportAndScissor = false;
 	pipelineOptions.primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
-	pipelineOptions.rasterizationSamples = LogicalDevice::Instance->GetMaxSampleCount();            // TODO Find a way to set sample count to 1. We only need MSAA for pbr-pipeline
-	pipelineOptions.cullMode = VK_CULL_MODE_NONE;
+	pipelineOptions.rasterizationSamples = LogicalDevice::Instance->GetMaxSampleCount();
+	pipelineOptions.cullMode = VK_CULL_MODE_BACK_BIT;
 	pipelineOptions.colorBlendAttachments.blendEnable = VK_TRUE;
 	pipelineOptions.polygonMode = VK_POLYGON_MODE_FILL;
-	// pipelineOptions.frontFace = VK_FRONT_FACE_CLOCKWISE;
+	pipelineOptions.frontFace = VK_FRONT_FACE_CLOCKWISE;
 	pipelineOptions.depthStencil.depthTestEnable = false;
 	pipelineOptions.depthStencil.depthWriteEnable = false;
 

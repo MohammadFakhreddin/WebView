@@ -57,6 +57,7 @@ namespace MFA
             SDL_Window * sdlWindow = SDL_GetWindowFromID(event->window.windowID);
             if (sdlWindow == static_cast<SDL_Window *>(_window))
             {
+                DeviceWaitIdle();
                 _windowResized = true;
             }
         }
@@ -806,7 +807,8 @@ namespace MFA
         if (hasGraphicSubmission)
         {
             // Submit graphic queue
-            std::vector<VkSemaphore> graphicWaitSemaphores{ presentSemaphore };
+            std::vector<VkSemaphore> graphicWaitSemaphores{presentSemaphore};
+
             if (hasComputeSubmission == true)
             {
                 graphicWaitSemaphores.emplace_back(computeSemaphore);
@@ -858,6 +860,7 @@ namespace MFA
         auto const res = vkQueuePresentKHR(_presentQueue, &presentInfo);
         if (res == VK_SUBOPTIMAL_KHR || res == VK_ERROR_OUT_OF_DATE_KHR || _windowResized == true)
         {
+            DeviceWaitIdle();
             _windowResized = true;
         }
         else if (res != VK_SUCCESS)

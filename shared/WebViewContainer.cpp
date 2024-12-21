@@ -145,7 +145,6 @@ litehtml::uint_ptr WebViewContainer::create_font(
 	litehtml::font_metrics* fm
 )
 {
-	float const scale = static_cast<float>(size) / static_cast<float>(get_default_font_size());
     fm->height = static_cast<int>(_fontRenderer->TextHeight(size));
 	fm->draw_spaces = false;
 	_fontScales.emplace_back(size);
@@ -336,7 +335,6 @@ void WebViewContainer::draw_text(
 	FontRenderer::TextParams textParams{};
 	textParams.color = ConvertColor(color);
 	textParams.hTextAlign = FontRenderer::HorizontalTextAlign::Left;
-	textParams.vTextAlign = FontRenderer::VerticalTextAlign::Top;
 	textParams.fontSizeInPixels = _fontScales[hFont - 1];
 	
 	auto const x = static_cast<float>(pos.x);

@@ -47,9 +47,10 @@ void WebViewApp::Run()
         fontSamplerParams
     );
     MFA_ASSERT(fontSampler != nullptr);
-
+    // TODO: Support multiple fonts!
     auto const fontPipeline = std::make_shared<TextOverlayPipeline>(_displayRenderPass, fontSampler);
     auto const fontPath = Path::Instance()->Get("fonts/PublicSans-Bold.ttf");
+    // auto const fontPath = Path::Instance()->Get("fonts/JetBrains-Mono/JetBrainsMonoNL-Regular.ttf");
     MFA_ASSERT(std::filesystem::exists(fontPath) == true);
     auto const fontData = File::Read(fontPath);
     _fontRenderer = std::make_shared<CustomFontRenderer>(fontPipeline, Alias{fontData->Ptr(), fontData->Len()}, 100.0f);

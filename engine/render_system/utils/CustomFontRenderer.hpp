@@ -34,12 +34,9 @@ namespace MFA
 
         enum class HorizontalTextAlign {Center, Left, Right};
 
-        enum class VerticalTextAlign { Top, Center };
-
         struct TextParams
         {
             HorizontalTextAlign hTextAlign = HorizontalTextAlign::Left;
-            VerticalTextAlign vTextAlign = VerticalTextAlign::Top;
             float fontSizeInPixels = DefaultFontSize;
             glm::vec3 color{1.0f, 1.0f, 1.0f};
         };
@@ -89,8 +86,8 @@ namespace MFA
 
         RT::DescriptorSetGroup _descriptorSet{};
 
-        float _fontHeight = 0.0f;
-        stbtt_fontinfo _font{};
-
+        float _atlasWidth{};
+        float _atlasHeight{};
+        float _fontHeight{};
     };
 }

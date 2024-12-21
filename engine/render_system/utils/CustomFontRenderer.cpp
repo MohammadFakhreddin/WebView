@@ -24,13 +24,13 @@ namespace MFA
         int const atlasWidth = std::ceil(sqrt(bitmapSize) + 1);
         int const atlasHeight = atlasWidth;
 
-        int result = stbtt_InitFont(&_font, buffer, 0);
-        MFA_ASSERT(result >= 0);
+        // int result = stbtt_InitFont(&_font, buffer, 0);
+        // MFA_ASSERT(result >= 0);
 
         auto const bitmap = Memory::AllocSize(atlasWidth * atlasHeight * sizeof(uint8_t));
         _stbFontData.resize(FontNumberOfChars);
         // Bake font into the bitmap
-        result = stbtt_BakeFontBitmap(
+        int const result = stbtt_BakeFontBitmap(
             buffer,                                     // Font data
             0,                                          // Offset to the start of the font
             fontHeight,                                 // Font pixel height
@@ -42,6 +42,9 @@ namespace MFA
         MFA_ASSERT(result >= 0);
         CreateFontTextureBuffer(atlasWidth, atlasHeight, Alias{bitmap->Ptr(), bitmap->Len()});
         _descriptorSet = _pipeline->CreateDescriptorSet(*_fontTexture);
+
+        _atlasWidth = (float)atlasWidth;
+        _atlasHeight = (float)atlasHeight;
     }
 
     //------------------------------------------------------------------------------------------------------------------
@@ -82,21 +85,19 @@ namespace MFA
         TextParams const & params
     )
     {
-        float const scale = 1.0f;//stbtt_ScaleForPixelHeight(&_font, params.fontSizeInPixels);
-
         int letterRange = inOutData.letterRange.empty() == false ? inOutData.letterRange.back() : 0;
         int const letterRangeBegin = letterRange;
 
         auto * mapped = &reinterpret_cast<Pipeline::Vertex*>(inOutData.vertexData->Data())[letterRange * 4];
-        auto* mappedBegin = mapped;
+        auto * mappedBegin = mapped;
 
-        const float charW = WidthModifier * scale;
-        const float charH = HeightModifier * scale;
+        float const scale = params.fontSizeInPixels / _fontHeight;
 
         bool success = true;
 
+        float height = 0.0f;
         // Generate a uv mapped quad per char in the new text
-        for (auto letter : text)
+        for (auto const letter : text)
         {
             if (letterRange + 1 >= inOutData.maxLetterCount)
             {
@@ -104,44 +105,58 @@ namespace MFA
                 break;
             }
 
-            int letterIdx = static_cast<uint32_t>(letter) - FontFirstChar;
+            int letterIdx = (int)(letter) - FontFirstChar;
             if (letterIdx >= 0 && letterIdx < FontNumberOfChars)
             {
-                auto * charData = &_stbFontData[letterIdx];
+                // I think x0, y0 is actually the uv coordinates and I should use xOffset and YOffset for other things
+                auto const * charData = &_stbFontData[letterIdx];
 
-                mapped->position.x = (x + (float)charData->x0 * charW);
-                mapped->position.y = (y + (float)charData->y0 * charH);
-                mapped->uv.x = 0.0f;
-                mapped->uv.y = 0.0f;
+                auto const pixelWidth = charData->x1 - charData->x0;
+                auto const pixelHeight = charData->y1 - charData->y0;
+
+                float const charW = (float)pixelWidth * scale;
+                float const charH = (float)pixelHeight * scale;
+
+                height = std::max(height, charH);
+
+                float const x0Offset = (float)charData->xoff * scale;
+                float const y0Offset = (float)charData->yoff * scale;
+                float const x1Offset = x0Offset + charW;
+                float const y1Offset = y0Offset + charH;
+
+                mapped->position.x = x + x0Offset;
+                mapped->position.y = y + y0Offset;
+                mapped->uv.x = (float)charData->x0 / _atlasWidth;
+                mapped->uv.y = (float)charData->y0 / _atlasHeight;
                 mapped->color = params.color;
 
                 mapped++;
 
-                mapped->position.x = (x + (float)charData->x1 * charW);
-                mapped->position.y = (y + (float)charData->y0 * charH);
-                mapped->uv.x = 1.0f;
-                mapped->uv.y = 0.0f;
+                mapped->position.x = x + x1Offset;
+                mapped->position.y = y + y0Offset;
+                mapped->uv.x = (float)charData->x1 / _atlasWidth;
+                mapped->uv.y = (float)charData->y0 / _atlasHeight;
                 mapped->color = params.color;
 
                 mapped++;
 
-                mapped->position.x = (x + (float)charData->x0 * charW);
-                mapped->position.y = (y + (float)charData->y1 * charH);
-                mapped->uv.x = 0.0f;
-                mapped->uv.y = 1.0f;
+                mapped->position.x = x + x0Offset;
+                mapped->position.y = y + y1Offset;
+                mapped->uv.x = (float)charData->x0 / _atlasWidth;
+                mapped->uv.y = (float)charData->y1 / _atlasHeight;
                 mapped->color = params.color;
 
                 mapped++;
 
-                mapped->position.x = (x + (float)charData->x1 * charW);
-                mapped->position.y = (y + (float)charData->y1 * charH);
-                mapped->uv.x = 1.0f;
-                mapped->uv.y = 1.0f;
+                mapped->position.x = x + x1Offset;
+                mapped->position.y = y + y1Offset;
+                mapped->uv.x = (float)charData->x1 / _atlasWidth;
+                mapped->uv.y = (float)charData->y1 / _atlasHeight;
                 mapped->color = params.color;
 
                 mapped++;
 
-                x += charData->xadvance * charW;
+                x += charData->xadvance * scale;
 
                 letterRange++;
             }
@@ -150,14 +165,9 @@ namespace MFA
         mapped = mappedBegin;
         int const itrCount = std::min<int>(inOutData.maxLetterCount - letterRangeBegin, text.size() * 4);
 
-        switch (params.vTextAlign)
+        for (int i = 0; i < itrCount; ++i)
         {
-        case VerticalTextAlign::Center:
-            for (int i = 0; i < itrCount; ++i)
-            {
-                mapped[i].position.y -= _fontHeight * charH;
-            }
-            break;
+            mapped[i].position.y += height;
         }
 
         auto const width = TextWidth(text, params.fontSizeInPixels);
@@ -221,8 +231,8 @@ namespace MFA
 
     float CustomFontRenderer::TextWidth(std::string_view const & text, float const fontSizeInPixels) const
     {
-        float const scale = 1.0f;//stbtt_ScaleForPixelHeight(&_font, fontSizeInPixels);
-        const float charW = WidthModifier * scale;
+        float const scale = fontSizeInPixels / _fontHeight;
+
         float textWidth = 0;
         for (auto const letter : text)
         {
@@ -230,7 +240,7 @@ namespace MFA
             if (idx >= 0 && idx < FontNumberOfChars)
             {
                 auto const * charData = &_stbFontData[static_cast<uint32_t>(letter) - FontFirstChar];
-                textWidth += charData->xadvance * charW;
+                textWidth += charData->xadvance * scale;
             }
         }
 
@@ -241,9 +251,7 @@ namespace MFA
 
     float CustomFontRenderer::TextHeight(float const fontSizeInPixels) const
     {
-        float const scale = 1.0f;//stbtt_ScaleForPixelHeight(&_font, fontSizeInPixels);
-        const float charH = HeightModifier * scale;
-        return charH * _fontHeight;
+        return fontSizeInPixels * HeightModifier;
     }
 
     //------------------------------------------------------------------------------------------------------------------
