@@ -89,8 +89,9 @@ namespace Shared
 
     BinaryReader::UInt32 BinaryReader::ReadUInt32()
     {
-        auto value = *reinterpret_cast<UInt32 *>(_ptr);
-        _ptr = _ptr + sizeof(UInt32);
+        auto * ptr = reinterpret_cast<UInt32 *>(_ptr);
+        auto value = *ptr;
+        _ptr = (ptr + 1);
         if constexpr (isLittleEndian == true)
         {
             value = ToLittleEndian(value);

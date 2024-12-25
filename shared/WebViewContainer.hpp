@@ -18,7 +18,7 @@ public:
 
 	// TODO: We need an image renderer class as well
     explicit WebViewContainer(
-        std::shared_ptr<MFA::Blob> const & htmlBlob,
+        char const * htmlAddress,
         litehtml::position clip,
         std::shared_ptr<FontRenderer> fontRenderer,
         std::shared_ptr<SolidFillRenderer> solidFillRenderer
@@ -45,6 +45,10 @@ public:
     static litehtml::element::ptr GetElementByTag(char const * tag, litehtml::element::ptr element);
 
 	void InvalidateStyles(litehtml::element::ptr element);
+
+    void OnReload(litehtml::position clip);
+
+    void OnResize(litehtml::position clip);
 	
 protected:
 
@@ -161,6 +165,10 @@ private:
 	[[nodiscard]]
 	static glm::vec4 ConvertColor(litehtml::web_color const & webColor);
 
+    std::string _htmlAddress{};
+    std::string _parentAddress{};
+    std::shared_ptr<MFA::Blob> _htmlBlob{};
+
 	litehtml::position _clip {};
 	std::shared_ptr<FontRenderer> _fontRenderer = nullptr;
 	std::shared_ptr<SolidFillRenderer> _solidFillRenderer = nullptr;
@@ -173,6 +181,9 @@ private:
 	std::vector<std::function<void(MFA::RT::CommandRecordState&)>> _drawCalls{};
 
 	std::vector<float> _fontScales{};
+
+    float _bodyWidth{};
+    float _bodyHeight{};
     glm::mat4 _modelMat{};
 
 	bool _isDirty = true;

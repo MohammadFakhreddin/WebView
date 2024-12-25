@@ -24,6 +24,8 @@ namespace MFA
         [[nodiscard]]
         std::string Get(char const * address) const;
 
+        static std::string Get(char const *address, char const *relativePath);
+
         std::string Relative(char const * address) const;
 
         [[nodiscard]]

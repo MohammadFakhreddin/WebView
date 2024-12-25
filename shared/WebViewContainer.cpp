@@ -3,6 +3,8 @@
 #include "ImportGLTF.hpp"
 #include "LogicalDevice.hpp"
 #include "RenderBackend.hpp"
+#include "BedrockFile.hpp"
+#include "BedrockPath.hpp"
 
 #include <ranges>
 
@@ -11,70 +13,20 @@ using namespace MFA;
 //=========================================================================================
 
 WebViewContainer::WebViewContainer(
-	std::shared_ptr<Blob> const & htmlBlob,
-	litehtml::position clip,
+    char const *htmlAddress,
+    litehtml::position clip,
 	std::shared_ptr<FontRenderer> fontRenderer,
 	std::shared_ptr<SolidFillRenderer> solidFillRenderer
 )
 	: litehtml::document_container()
-	, _clip(clip)
+    , _htmlAddress(htmlAddress)
 	, _fontRenderer(std::move(fontRenderer))
 	, _solidFillRenderer(std::move(solidFillRenderer))
 {
-	char const * htmlText = htmlBlob->As<char const>();
+    MFA_ASSERT(std::filesystem::exists(htmlAddress));
+    _parentAddress = std::filesystem::path(htmlAddress).parent_path().string();
 
-	_html = litehtml::document::createFromString(
-		htmlText,
-		this
-	);
-
-    auto * device = LogicalDevice::Instance;
-    auto const windowWidth = static_cast<float>(device->GetWindowWidth());
-    auto const windowHeight = static_cast<float>(device->GetWindowHeight());
-
-    float scaleFactorX = 1.0f;
-    float scaleFactorY = 1.0f;
-
-    auto const bodyTag = GetElementByTag("body");
-    if (bodyTag != nullptr)
-    {
-        try
-        {
-            auto bodyWidth = std::stoi(bodyTag->get_attr("width", "-1"));
-            if (bodyWidth <= 0)
-            {
-                bodyWidth = windowWidth;
-            }
-            float wScale = (float)windowWidth / bodyWidth;
-            scaleFactorX = wScale;
-
-            auto bodyHeight = std::stoi(bodyTag->get_attr("height", "-1"));
-            if (bodyHeight <= 0)
-            {
-                bodyHeight = windowHeight;
-            }
-            float hScale = (float)windowHeight / bodyHeight;
-            scaleFactorY = hScale;
-        }
-        catch (const std::exception & e)
-        {
-            MFA_LOG_WARN("Failed to parse body width and height with error\n %s", e.what());
-        }
-    }
-
-    float scaleFactor = std::min(scaleFactorX, scaleFactorY);
-    scaleFactor = std::max(scaleFactor, 1.0f);
-
-    float halfWidth = windowWidth * 0.5f;
-    float halfHeight = windowHeight * 0.5f;
-    float scaleX = (1.0f / halfWidth) * scaleFactor;
-    float scaleY = (1.0f / halfHeight) * scaleFactor;
-    _modelMat = glm::transpose(
-        glm::scale(glm::identity<glm::mat4>(), glm::vec3{scaleX, scaleY, 1.0f }) *
-        glm::translate(glm::identity<glm::mat4>(), glm::vec3{ -halfWidth, -halfHeight, 0.0f })
-    );
-
-    //MFA_LOG_INFO("Start!");
+    OnReload(std::move(clip));
 }
 
 //=========================================================================================
@@ -401,8 +353,20 @@ void WebViewContainer::get_media_features(litehtml::media_features& media) const
 
 //=========================================================================================
 
-void WebViewContainer::import_css(litehtml::string& text, const litehtml::string& url, litehtml::string& baseurl)
+void WebViewContainer::import_css(
+    litehtml::string& text,
+    const litehtml::string& url,
+    litehtml::string& baseurl
+)
 {
+    MFA_LOG_INFO(
+        "Requested import css.\nText: %s\nurl: %s\nbaseurl: %s"
+        , text.c_str(), url.c_str(), baseurl.c_str()
+    );
+    // TODO: Use resource manager here!
+    auto const cssPath = Path::Get(url.c_str(), _parentAddress.c_str());
+    auto const cssBlob = File::Read(cssPath);
+    text = cssBlob->As<char const>();
 }
 
 //=========================================================================================
@@ -554,6 +518,80 @@ void WebViewContainer::InvalidateStyles(litehtml::element::ptr element)
 	element->apply_stylesheet(_html->m_styles);
 	element->compute_styles();
 	_isDirty = true;
+}
+
+//=========================================================================================
+
+void WebViewContainer::OnReload(litehtml::position clip)
+{
+    _htmlBlob = File::Read(_htmlAddress);
+    char const *htmlText = _htmlBlob->As<char const>();
+    _html = litehtml::document::createFromString(htmlText, this);
+
+    auto *device = LogicalDevice::Instance;
+    auto const windowWidth = static_cast<float>(device->GetWindowWidth());
+    auto const windowHeight = static_cast<float>(device->GetWindowHeight());
+
+    auto const bodyTag = GetElementByTag("body");
+    if (bodyTag != nullptr)
+    {
+        try
+        {
+            _bodyWidth = std::stoi(bodyTag->get_attr("width", "-1"));
+            _bodyHeight = std::stoi(bodyTag->get_attr("height", "-1"));
+        }
+        catch (const std::exception &e)
+        {
+            MFA_LOG_WARN("Failed to parse body width and height with error\n %s", e.what());
+        }
+    }
+
+    OnResize(std::move(clip));
+}
+
+//=========================================================================================
+
+void WebViewContainer::OnResize(litehtml::position clip)
+{
+    auto *device = LogicalDevice::Instance;
+    auto const windowWidth = static_cast<float>(device->GetWindowWidth());
+    auto const windowHeight = static_cast<float>(device->GetWindowHeight());
+
+    float scaleFactorX = 1.0f;
+    float scaleFactorY = 1.0f;
+
+    float bodyWidth = _bodyWidth;
+    if (bodyWidth <= 0)
+    {
+        bodyWidth = windowWidth;
+    }
+    float wScale = (float)windowWidth / bodyWidth;
+    scaleFactorX = wScale;
+
+    float bodyHeight = _bodyHeight;
+    if (bodyHeight <= 0)
+    {
+        bodyHeight = windowHeight;
+    }
+    float hScale = (float)windowHeight / bodyHeight;
+    scaleFactorY = hScale;
+
+    float scaleFactor = std::min(scaleFactorX, scaleFactorY);
+    scaleFactor = std::max(scaleFactor, 1.0f);
+
+    float halfWidth = windowWidth * 0.5f;
+    float halfHeight = windowHeight * 0.5f;
+    float scaleX = (1.0f / halfWidth) * scaleFactor;
+    float scaleY = (1.0f / halfHeight) * scaleFactor;
+
+    _clip = std::move(clip);
+   
+    _modelMat = glm::transpose(
+        glm::scale(glm::identity<glm::mat4>(), glm::vec3{scaleX, scaleY, 1.0f}) *
+        glm::translate(glm::identity<glm::mat4>(), glm::vec3{-halfWidth, -halfHeight, 0.0f})
+    );
+
+    _isDirty = true;
 }
 
 //=========================================================================================

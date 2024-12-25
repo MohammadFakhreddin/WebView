@@ -1,0 +1,36 @@
+@font-face {
+    font-family: 'Mamad';
+    src: url('../fonts/JetBrains-Mono/JetBrainsMono-Bold.ttf');
+    font-weight: normal;
+    font-style: normal;
+}
+.center-column {
+    display: flex; 
+    flex-direction: column; 
+    justify-content: center; 
+    align-content: center; 
+    align-items: center;
+    width: 100%;
+    font-family: "Mamad";
+}
+.center-row {
+    display: flex; 
+    flex-direction: row; 
+    justify-content: center; 
+    align-content: center; 
+    align-items: center;
+    width: 100%;
+}
+.button {
+    background-color: white; 
+    padding: 10px; 
+    border-radius: 32px;
+    width: 200px;
+    font-size: 20px;
+}
+.selected {
+    background-color: rgb(172, 167, 214); 
+}
+.spacer {
+    padding: 16px;
+}

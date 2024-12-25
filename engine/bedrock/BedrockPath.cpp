@@ -85,6 +85,21 @@ std::string MFA::Path::Get(char const *address) const
 
 //-------------------------------------------------------------------------------------------------
 
+std::string MFA::Path::Get(char const *address, char const *relativePath)
+{
+    if (std::filesystem::exists(address) == true)
+    {
+        return address;
+    }
+    if (strncmp(address, "./", 2) == 0 || strncmp(address, "/", 1) == 0)
+    {
+        return address;
+    }
+    return std::filesystem::path(relativePath).append(address).string();
+}
+
+//-------------------------------------------------------------------------------------------------
+
 std::string MFA::Path::Relative(char const *address) const
 {
     if (strncmp(address, mAssetPath.c_str(), mAssetPath.size()) == 0)

@@ -49,11 +49,11 @@ void WebViewApp::Run()
     MFA_ASSERT(fontSampler != nullptr);
     // TODO: Support multiple fonts!
     auto const fontPipeline = std::make_shared<TextOverlayPipeline>(_displayRenderPass, fontSampler);
-    auto const fontPath = Path::Instance()->Get("fonts/PublicSans-Bold.ttf");
-    // auto const fontPath = Path::Instance()->Get("fonts/JetBrains-Mono/JetBrainsMonoNL-Regular.ttf");
+    //auto const fontPath = Path::Instance()->Get("fonts/PublicSans-Bold.ttf");
+     auto const fontPath = Path::Instance()->Get("fonts/JetBrains-Mono/JetBrainsMonoNL-Regular.ttf");
     MFA_ASSERT(std::filesystem::exists(fontPath) == true);
     auto const fontData = File::Read(fontPath);
-    _fontRenderer = std::make_shared<CustomFontRenderer>(fontPipeline, Alias{fontData->Ptr(), fontData->Len()}, 100.0f);
+    _fontRenderer = std::make_shared<CustomFontRenderer>(fontPipeline, Alias{fontData->Ptr(), fontData->Len()}, 200.0f);
 
     auto const solidFillPipeline = std::make_shared<SolidFillPipeline>(_displayRenderPass);
     _solidFillRenderer = std::make_shared<SolidFillRenderer>(solidFillPipeline);
@@ -135,7 +135,15 @@ void WebViewApp::Render(MFA::RT::CommandRecordState & recordState)
 
 void WebViewApp::Resize()
 {
-    Reload();
+    auto const * device = LogicalDevice::Instance;
+
+    litehtml::position clip;
+    clip.x = 0;
+    clip.y = 0;
+    clip.width = device->GetWindowWidth();
+    clip.height = device->GetWindowHeight();
+
+    _webViewContainer->OnResize(clip);
 }
 
 //=============================================================
@@ -164,19 +172,9 @@ void WebViewApp::OnSDL_Event(SDL_Event* event)
 void WebViewApp::Reload()
 {
     // TODO: Reload shaders too
-    RB::DeviceWaitIdle(LogicalDevice::Instance->GetVkDevice());
-    InstantiateWebViewContainer();
-}
-
-//=============================================================
-
-void WebViewApp::InstantiateWebViewContainer()
-{
-    auto const path = Path::Instance();
     auto const * device = LogicalDevice::Instance;
 
-	auto const htmlPath = path->Get("web_view/Test.html");
-	auto const htmlBlob = File::Read(htmlPath);
+    RB::DeviceWaitIdle(device->GetVkDevice());
 
     litehtml::position clip;
     clip.x = 0;
@@ -184,13 +182,41 @@ void WebViewApp::InstantiateWebViewContainer()
     clip.width = device->GetWindowWidth();
     clip.height = device->GetWindowHeight();
 
+    _webViewContainer->OnReload(clip);
+
+    QueryButtons();
+}
+
+//=============================================================
+
+void WebViewApp::InstantiateWebViewContainer()
+{
+    auto const path = Path::Instance();
+
+    auto const * device = LogicalDevice::Instance;
+
+	auto const htmlPath = path->Get("web_view/Test.html");
+	
+    litehtml::position clip;
+    clip.x = 0;
+    clip.y = 0;
+    clip.width = device->GetWindowWidth();
+    clip.height = device->GetWindowHeight();
+
     _webViewContainer = std::make_unique<WebViewContainer>(
-        htmlBlob,
+        htmlPath.c_str(),
         clip,
         _fontRenderer,
         _solidFillRenderer
     );
 
+    QueryButtons();
+}
+
+//=============================================================
+
+void WebViewApp::QueryButtons()
+{
     _buttons.clear();
     _buttons.emplace_back(_webViewContainer->GetElementById("new-game"));
     _buttons.emplace_back(_webViewContainer->GetElementById("continue"));

@@ -26,6 +26,8 @@ private:
 
 	void InstantiateWebViewContainer();
 
+    void QueryButtons();
+
 	void SetSelectedButton(int idx);
 
 	std::shared_ptr<MFA::DisplayRenderPass> _displayRenderPass;
