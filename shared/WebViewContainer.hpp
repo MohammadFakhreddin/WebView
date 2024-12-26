@@ -15,13 +15,23 @@ public:
 
 	using FontRenderer = MFA::CustomFontRenderer;
 	using SolidFillRenderer = MFA::SolidFillRenderer;
+    using RequestBlob = std::function<std::shared_ptr<MFA::Blob>(char const * address, bool force)>;
+    using RequestFont = std::function<std::shared_ptr<FontRenderer>(char const * font)>;
+    
+    struct Params
+    {
+        std::shared_ptr<SolidFillRenderer> solidFillRenderer{};
+        RequestBlob requestBlob;
+        RequestFont requestFont;
+        // TODO: ImageRenderer, It can be an actual image or just a frame buffer.
+        // TODO: RequestImage function.
+    };
 
 	// TODO: We need an image renderer class as well
     explicit WebViewContainer(
         char const * htmlAddress,
         litehtml::position clip,
-        std::shared_ptr<FontRenderer> fontRenderer,
-        std::shared_ptr<SolidFillRenderer> solidFillRenderer
+        Params params
 	);
 
 	~WebViewContainer() override;
@@ -165,26 +175,42 @@ private:
 	[[nodiscard]]
 	static glm::vec4 ConvertColor(litehtml::web_color const & webColor);
 
+    void SwitchActiveState();
+
     std::string _htmlAddress{};
+    std::shared_ptr<SolidFillRenderer> _solidFillRenderer = nullptr;
+    RequestBlob _requestBlob{};
+    RequestFont _requestFont{};
+
     std::string _parentAddress{};
     std::shared_ptr<MFA::Blob> _htmlBlob{};
 
 	litehtml::position _clip {};
-	std::shared_ptr<FontRenderer> _fontRenderer = nullptr;
-	std::shared_ptr<SolidFillRenderer> _solidFillRenderer = nullptr;
+
+    struct FontData
+    {
+        int id = -1;
+        int size = 14;
+        std::shared_ptr<FontRenderer> renderer{};
+    };
+    std::vector<FontData> _fontList{};
 
 	litehtml::document::ptr _html = nullptr;
-	GumboOutput * _gumboOutput = nullptr;
-
-	std::vector<std::shared_ptr<FontRenderer::TextData>> _textDataList{};
-	std::vector<std::shared_ptr<MFA::LocalBufferTracker>> _solidFillBuffers{};
-	std::vector<std::function<void(MFA::RT::CommandRecordState&)>> _drawCalls{};
-
-	std::vector<float> _fontScales{};
 
     float _bodyWidth{};
     float _bodyHeight{};
     glm::mat4 _modelMat{};
 
 	bool _isDirty = true;
+
+    struct State
+    {
+        std::vector<std::shared_ptr<FontRenderer::TextData>> textDataList{};
+        std::vector<std::shared_ptr<MFA::LocalBufferTracker>> solidFillBuffers{};
+        std::vector<std::function<void(MFA::RT::CommandRecordState &)>> drawCalls{};
+        int lifeTime{};
+    };
+    std::vector<State> _states{};
+    int _activeIdx = 0;
+    State * _activeState = nullptr;
 };

@@ -18,7 +18,7 @@ TextOverlayPipeline::TextOverlayPipeline(
 {
 	_descriptorPool = RB::CreateDescriptorPool(
 		LogicalDevice::Instance->GetVkDevice(),
-		1
+		1000
 	);
 	CreateDescriptorLayout();
 	CreatePipeline();

@@ -1,9 +1,17 @@
 @font-face {
-    font-family: 'Mamad';
+    font-family: 'JetBrainsMono';
     src: url('../fonts/JetBrains-Mono/JetBrainsMono-Bold.ttf');
     font-weight: normal;
     font-style: normal;
 }
+@font-face {
+    font-family: 'PublicSans';
+    src: url('../fonts/PublicSans/PublicSans-Bold.ttf');
+    font-weight: normal;
+    font-style: normal;
+}
+.PublicSans {font-family: 'PublicSans';}
+.JetBrainsMono {font-family: 'JetBrainsMono';}
 .center-column {
     display: flex; 
     flex-direction: column; 
@@ -11,7 +19,6 @@
     align-content: center; 
     align-items: center;
     width: 100%;
-    font-family: "Mamad";
 }
 .center-row {
     display: flex; 

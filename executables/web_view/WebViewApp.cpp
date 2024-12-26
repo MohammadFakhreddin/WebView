@@ -47,13 +47,15 @@ void WebViewApp::Run()
         fontSamplerParams
     );
     MFA_ASSERT(fontSampler != nullptr);
-    // TODO: Support multiple fonts!
-    auto const fontPipeline = std::make_shared<TextOverlayPipeline>(_displayRenderPass, fontSampler);
-    //auto const fontPath = Path::Instance()->Get("fonts/PublicSans-Bold.ttf");
-     auto const fontPath = Path::Instance()->Get("fonts/JetBrains-Mono/JetBrainsMonoNL-Regular.ttf");
-    MFA_ASSERT(std::filesystem::exists(fontPath) == true);
-    auto const fontData = File::Read(fontPath);
-    _fontRenderer = std::make_shared<CustomFontRenderer>(fontPipeline, Alias{fontData->Ptr(), fontData->Len()}, 200.0f);
+    _fontPipeline = std::make_shared<TextOverlayPipeline>(_displayRenderPass, fontSampler);
+    AddFont(
+        "JetBrainsMono",
+        Path::Instance()->Get("fonts/JetBrains-Mono/JetBrainsMono-Bold.ttf").c_str()
+    );
+    AddFont(
+        "PublicSans",
+        Path::Instance()->Get("fonts/PublicSans/PublicSans-Bold.ttf").c_str()
+    );
 
     auto const solidFillPipeline = std::make_shared<SolidFillPipeline>(_displayRenderPass);
     _solidFillRenderer = std::make_shared<SolidFillRenderer>(solidFillPipeline);
@@ -203,12 +205,14 @@ void WebViewApp::InstantiateWebViewContainer()
     clip.width = device->GetWindowWidth();
     clip.height = device->GetWindowHeight();
 
-    _webViewContainer = std::make_unique<WebViewContainer>(
-        htmlPath.c_str(),
-        clip,
-        _fontRenderer,
-        _solidFillRenderer
-    );
+    WebViewContainer::Params params
+    {
+        .solidFillRenderer = _solidFillRenderer,
+        .requestBlob = [this](char const *address, bool force) { return RequestBlob(address, force); },
+        .requestFont = [this](char const * font) { return RequestFont(font); }
+    };
+
+    _webViewContainer = std::make_unique<WebViewContainer>(htmlPath.c_str(), clip, params);
 
     QueryButtons();
 }
@@ -252,6 +256,47 @@ void WebViewApp::SetSelectedButton(int const idx)
         button->set_attr("class", classAttr.c_str());
         _webViewContainer->InvalidateStyles(button);
     }
+}
+
+//=============================================================
+
+void WebViewApp::InitFontPipeline()
+{
+}
+
+//=============================================================
+
+void WebViewApp::AddFont(char const *name, char const *path)
+{
+    MFA_ASSERT(_fontMap.contains(name) == false);
+    MFA_ASSERT(std::filesystem::exists(path) == true);
+    auto const fontData = File::Read(path);
+    _fontMap[name] = std::make_shared<CustomFontRenderer>(
+        _fontPipeline,
+        Alias{fontData->Ptr(), fontData->Len()},
+        200.0f
+    );
+}
+
+// TODO: We have to reuse stuff here instead
+//=============================================================
+
+std::shared_ptr<MFA::Blob> WebViewApp::RequestBlob(char const *address, bool force)
+{
+    return File::Read(address);
+}
+
+//=============================================================
+
+std::shared_ptr<MFA::CustomFontRenderer> WebViewApp::RequestFont(char const * font)
+{
+    auto const findResult = _fontMap.find(font);
+    if (findResult != _fontMap.end())
+    {
+        return findResult->second;
+    }
+    MFA_LOG_WARN("Failed to find font with name %s", font);
+    return _fontMap.begin()->second;
 }
 
 //=============================================================

@@ -13,18 +13,21 @@ using namespace MFA;
 //=========================================================================================
 
 WebViewContainer::WebViewContainer(
-    char const *htmlAddress,
+    char const * htmlAddress,
     litehtml::position clip,
-	std::shared_ptr<FontRenderer> fontRenderer,
-	std::shared_ptr<SolidFillRenderer> solidFillRenderer
+    Params params
 )
 	: litehtml::document_container()
     , _htmlAddress(htmlAddress)
-	, _fontRenderer(std::move(fontRenderer))
-	, _solidFillRenderer(std::move(solidFillRenderer))
+	, _solidFillRenderer(std::move(params.solidFillRenderer))
+	, _requestBlob(std::move(params.requestBlob))
+    , _requestFont(std::move(params.requestFont))
 {
     MFA_ASSERT(std::filesystem::exists(htmlAddress));
     _parentAddress = std::filesystem::path(htmlAddress).parent_path().string();
+    MFA_ASSERT(_solidFillRenderer != nullptr);
+    MFA_ASSERT(_requestBlob != nullptr);
+    MFA_ASSERT(_requestFont != nullptr);
 
     OnReload(std::move(clip));
 }
@@ -37,29 +40,32 @@ WebViewContainer::~WebViewContainer() = default;
 
 void WebViewContainer::Update()
 {
+    for (auto & state : _states)
+    {
+        if (state.lifeTime > 0)
+        {
+            state.lifeTime -= 1;
+        }
+    }
 	if (_isDirty == true)
 	{
-		RB::DeviceWaitIdle(LogicalDevice::Instance->GetVkDevice());
 		_isDirty = false;
-		_drawCalls.clear();
-		_textDataList.clear();
-		_solidFillBuffers.clear();
+        SwitchActiveState();
 		_html->render(_clip.width, litehtml::render_all);
 		_html->draw(0, _clip.x, _clip.y, &_clip);
-        // TODO: We can record command buffer once
-	}
+    }
 }
 
 //=========================================================================================
 
 void WebViewContainer::UpdateBuffers(const RT::CommandRecordState& recordState)
 {
-	for (auto & textData : _textDataList)
+	for (auto & textData : _activeState->textDataList)
 	{
 		textData->vertexData->Update(recordState);
 	}
 
-	for (auto& tracker : _solidFillBuffers)
+	for (auto &tracker : _activeState->solidFillBuffers)
 	{
 		tracker->Update(recordState);
 	}
@@ -69,7 +75,7 @@ void WebViewContainer::UpdateBuffers(const RT::CommandRecordState& recordState)
 
 void WebViewContainer::DisplayPass(RT::CommandRecordState& recordState)
 {
-	for (auto & drawCall : _drawCalls)
+    for (auto &drawCall : _activeState->drawCalls)
 	{
 		drawCall(recordState);
 	}
@@ -97,10 +103,18 @@ litehtml::uint_ptr WebViewContainer::create_font(
 	litehtml::font_metrics* fm
 )
 {
-    fm->height = static_cast<int>(_fontRenderer->TextHeight(size));
+    auto fontRenderer = _requestFont(faceName);
+    MFA_ASSERT(fontRenderer != nullptr);
+
+    fm->height = static_cast<int>(fontRenderer->TextHeight(size));
 	fm->draw_spaces = false;
-	_fontScales.emplace_back(size);
-	return _fontScales.size();
+
+    _fontList.emplace_back();
+    auto & font = _fontList.back();
+    font.renderer = fontRenderer;
+    font.size = size;
+    font.id = _fontList.size();
+	return font.id;
 }
 
 //=========================================================================================
@@ -259,9 +273,9 @@ void WebViewContainer::draw_solid_fill(
 		topRightRadius,
 		bottomRightRadius
 	);
-	_solidFillBuffers.emplace_back(bufferTracker);
+    _activeState->solidFillBuffers.emplace_back(bufferTracker);
 
-	_drawCalls.emplace_back([this, bufferTracker](RT::CommandRecordState& recordState)->void
+	_activeState->drawCalls.emplace_back([this, bufferTracker](RT::CommandRecordState &recordState) -> void
 	{
         _solidFillRenderer->Draw(
             recordState,
@@ -281,23 +295,25 @@ void WebViewContainer::draw_text(
 	const litehtml::position& pos
 )
 {
-	// We can also use ImGui Draw text
-	std::shared_ptr textData = _fontRenderer->AllocateTextData();
+    auto & fontData = _fontList[hFont - 1];
+    auto const textWidth = fontData.renderer->TextWidth(std::string_view{text, strlen(text)}, fontData.size);
+    // We can also use ImGui Draw text
+    std::shared_ptr textData = fontData.renderer->AllocateTextData();
 
 	FontRenderer::TextParams textParams{};
 	textParams.color = ConvertColor(color);
 	textParams.hTextAlign = FontRenderer::HorizontalTextAlign::Left;
-	textParams.fontSizeInPixels = _fontScales[hFont - 1];
+    textParams.fontSizeInPixels = fontData.size;
 	
 	auto const x = static_cast<float>(pos.x);
 	auto const y = static_cast<float>(pos.y);
 
-	_fontRenderer->AddText(*textData, text, x, y, textParams);
-	_textDataList.emplace_back(textData);
+	fontData.renderer->AddText(*textData, text, x, y, textParams);
+    _activeState->textDataList.emplace_back(textData);
 
-	_drawCalls.emplace_back([this, textData](RT::CommandRecordState& recordState)->void
+	_activeState->drawCalls.emplace_back([this, textData, &fontData](RT::CommandRecordState &recordState) -> void
 	{
-		_fontRenderer->Draw(
+		fontData.renderer->Draw(
             recordState,
             TextOverlayPipeline::PushConstants{ .model = _modelMat },
             *textData
@@ -349,6 +365,7 @@ void WebViewContainer::get_language(litehtml::string& language, litehtml::string
 
 void WebViewContainer::get_media_features(litehtml::media_features& media) const
 {
+
 }
 
 //=========================================================================================
@@ -399,7 +416,7 @@ void WebViewContainer::on_mouse_event(const litehtml::element::ptr& el, litehtml
 
 int WebViewContainer::pt_to_px(int pt) const
 {
-	return 1;// TODO
+	return 1;
 }
 
 //=========================================================================================
@@ -430,7 +447,9 @@ void WebViewContainer::set_cursor(const char* cursor)
 
 int WebViewContainer::text_width(const char* text, litehtml::uint_ptr hFont)
 {
-    return static_cast<int>(_fontRenderer->TextWidth(std::string_view{ text, strlen(text) }, _fontScales[hFont - 1]));
+    auto & fontData = _fontList[hFont - 1];
+    auto const textWidth = fontData.renderer->TextWidth(std::string_view{text, strlen(text)}, fontData.size);
+    return static_cast<int>(textWidth);
 }
 
 //=========================================================================================
@@ -451,6 +470,33 @@ glm::vec4 WebViewContainer::ConvertColor(litehtml::web_color const& webColor)
 		static_cast<float>(webColor.blue) / 255.0f,
 		static_cast<float>(webColor.alpha) / 255.0f
 	};
+}
+
+//=========================================================================================
+
+void WebViewContainer::SwitchActiveState()
+{
+    if (_activeState != nullptr)
+    {
+        _activeState->lifeTime = LogicalDevice::Instance->GetMaxFramePerFlight();
+    }
+    _activeIdx = -1;
+    for (int i = 0; i < _states.size(); ++i)
+    {
+        if (_states[i].lifeTime <= 0)
+        {
+            _activeIdx = i;
+        }
+    }
+    if (_activeIdx < 0)
+    {
+        _activeIdx = _states.size();
+        _states.emplace_back();
+    }
+    _activeState = &_states[_activeIdx];
+    _activeState->textDataList.clear();
+    _activeState->solidFillBuffers.clear();
+    _activeState->drawCalls.clear();
 }
 
 //=========================================================================================
