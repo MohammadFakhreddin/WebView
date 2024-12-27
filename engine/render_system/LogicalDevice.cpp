@@ -375,7 +375,6 @@ namespace MFA
 
     RT::CommandRecordState LogicalDevice::AcquireRecordState(VkSwapchainKHR swapChain)
     {
-	    // TODO: Separate this function into multiple ones
 	    MFA_ASSERT(_maxFramePerFlight > _currentFrame);
 	    RT::CommandRecordState recordState{ .renderPass = nullptr };
 	    if (_windowVisible == false || _windowResized == true)

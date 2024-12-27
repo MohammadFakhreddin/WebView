@@ -40,7 +40,7 @@ namespace MFA
         {
             RB::UpdateHostVisibleBuffer(
                 LogicalDevice::Instance->GetVkDevice(),
-                *mBufferGroup->buffers[recordState.frameIndex],
+                *mBufferGroup->buffers[recordState.frameIndex % mBufferGroup->buffers.size()],
                 Alias(mData->Ptr(), mData->Len())
             );
             --mDirtyCounter;
@@ -51,7 +51,7 @@ namespace MFA
     
     void HostVisibleBufferTracker::SetData(Alias const & data)
     {
-        mDirtyCounter = mBufferGroup->buffers.size();
+        mDirtyCounter = (int)mBufferGroup->buffers.size();
         MFA_ASSERT(data.Len() <= mData->Len());
         std::memcpy(mData->Ptr(), data.Ptr(), data.Len());
     }
@@ -60,12 +60,26 @@ namespace MFA
     
     uint8_t * HostVisibleBufferTracker::Data()
     {
-        mDirtyCounter = mBufferGroup->buffers.size();
+        mDirtyCounter = (int)mBufferGroup->buffers.size();
         return mData->Ptr();
     }
     
     //-----------------------------------------------------------------------------------------------
-    
+
+    LocalBufferTracker::LocalBufferTracker(
+        std::shared_ptr<RT::BufferGroup> localBuffer,
+        std::shared_ptr<RT::BufferGroup> hostVisibleBuffer,
+        Alias const & data
+    )
+        : mLocalBuffer(std::move(localBuffer))
+        , mHostVisibleBuffer(std::move(hostVisibleBuffer))
+    {
+        mData = Memory::AllocSize(mLocalBuffer->bufferSize);
+        SetData(data);
+    }
+
+    //-----------------------------------------------------------------------------------------------
+
     LocalBufferTracker::LocalBufferTracker(
         std::shared_ptr<RT::BufferGroup> localBuffer,
         std::shared_ptr<RT::BufferGroup> hostVisibleBuffer
@@ -84,13 +98,13 @@ namespace MFA
         {
             RB::UpdateHostVisibleBuffer(
                 LogicalDevice::Instance->GetVkDevice(),
-                *mHostVisibleBuffer->buffers[recordState.frameIndex],
+                *mHostVisibleBuffer->buffers[recordState.frameIndex % mHostVisibleBuffer->buffers.size()],
                 Alias(mData->Ptr(), mData->Len())
             );
             RB::UpdateLocalBuffer(
                 recordState.commandBuffer,
-                *mLocalBuffer->buffers[recordState.frameIndex],
-                *mHostVisibleBuffer->buffers[recordState.frameIndex]
+                *mLocalBuffer->buffers[recordState.frameIndex % mLocalBuffer->buffers.size()],
+                *mHostVisibleBuffer->buffers[recordState.frameIndex % mHostVisibleBuffer->buffers.size()]
             );
             --mDirtyCounter;
         }
@@ -100,7 +114,7 @@ namespace MFA
     
     void LocalBufferTracker::SetData(Alias const & data)
     {
-        mDirtyCounter = mLocalBuffer->buffers.size();
+        mDirtyCounter = (int)mLocalBuffer->buffers.size();
         MFA_ASSERT(data.Len() <= mData->Len());
         std::memcpy(mData->Ptr(), data.Ptr(), data.Len());
     }
@@ -110,7 +124,7 @@ namespace MFA
     uint8_t * LocalBufferTracker::Data()
     {
         // Returns the data and resets the counter.
-        mDirtyCounter = LogicalDevice::Instance->GetMaxFramePerFlight();
+        mDirtyCounter = (int)LogicalDevice::Instance->GetMaxFramePerFlight();
         return mData->Ptr();
     }
     

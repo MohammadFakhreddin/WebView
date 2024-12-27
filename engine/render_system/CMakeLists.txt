@@ -1,6 +1,3 @@
-
-set(LIBRARY_SOURCES)
-
 list(
     APPEND LIBRARY_SOURCES
 
@@ -36,6 +33,8 @@ list(
     "${CMAKE_CURRENT_SOURCE_DIR}/pipeline/TextOverlayPipeline.hpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/pipeline/SolidFillPipeline.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/pipeline/SolidFillPipeline.hpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pipeline/ImagePipeline.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pipeline/ImagePipeline.hpp"
     
     "${CMAKE_CURRENT_SOURCE_DIR}/camera/PerspectiveCamera.hpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/camera/PerspectiveCamera.cpp"
@@ -50,6 +49,8 @@ list(
     "${CMAKE_CURRENT_SOURCE_DIR}/utils/CustomFontRenderer.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/utils/SolidFillRenderer.hpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/utils/SolidFillRenderer.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/utils/ImageRenderer.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/utils/ImageRenderer.hpp"
 )
 
 set(LIBRARY_NAME "RenderSystem")

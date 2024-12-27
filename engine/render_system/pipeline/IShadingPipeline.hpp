@@ -3,6 +3,7 @@
 namespace MFA {
 class IShadingPipeline {
 public:
-    virtual void reload() = 0;
+    virtual ~IShadingPipeline() = default;
+    virtual void Reload() = 0;
 };
 }

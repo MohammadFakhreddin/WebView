@@ -54,7 +54,7 @@ namespace MFA
         void Draw(
             RT::CommandRecordState& recordState,
             Pipeline::PushConstants const & pushConstants,
-            TextData & data
+            TextData const & data
         ) const;
 
         [[nodiscard]]

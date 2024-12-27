@@ -50,19 +50,18 @@ namespace MFA
 
     //=================================================================
 
-    void SolidFillPipeline::SetPushConstant(
-        RT::CommandRecordState& recordState,
-        PushConstants const& pushConstant
-    ) const
+    void SolidFillPipeline::SetPushConstant(RT::CommandRecordState &recordState,
+                                            PushConstants const &pushConstant) const
     {
-        RB::PushConstants(
-            recordState,
-            _pipeline->pipelineLayout,
-            VK_SHADER_STAGE_VERTEX_BIT,
-            0,
-            Alias{ pushConstant }
-        );
+        RB::PushConstants(recordState, _pipeline->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, Alias{pushConstant});
     }
+
+    //=================================================================
+
+    void SolidFillPipeline::Reload()
+	{
+	    CreatePipeline();
+	}
 
     //=================================================================
 

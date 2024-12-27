@@ -1,10 +1,12 @@
 #include "WebViewApp.hpp"
 
+#include "BedrockFile.hpp"
+#include "BedrockPath.hpp"
+#include "ImportTexture.hpp"
 #include "LogicalDevice.hpp"
 #include "Time.hpp"
 #include "WebViewContainer.hpp"
-#include "BedrockFile.hpp"
-#include "BedrockPath.hpp"
+
 
 using namespace MFA;
 
@@ -26,39 +28,50 @@ void WebViewApp::Run()
     );
 
     device->ResizeEventSignal2.Register([this]()->void {
-        Resize();
+        InstantiateWebViewContainer();
+        //Resize();
     });
 
-    RB::CreateSamplerParams fontSamplerParams{};
-    fontSamplerParams.magFilter = VK_FILTER_LINEAR;
-    fontSamplerParams.minFilter = VK_FILTER_LINEAR;
-    fontSamplerParams.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-    fontSamplerParams.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    fontSamplerParams.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    fontSamplerParams.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    fontSamplerParams.mipLodBias = 0.0f;
-    fontSamplerParams.compareOp = VK_COMPARE_OP_NEVER;
-    fontSamplerParams.minLod = 0.0f;
-    fontSamplerParams.maxLod = 1.0f;
-    fontSamplerParams.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK;
+    {// Font
+        RB::CreateSamplerParams fontSamplerParams{};
+        fontSamplerParams.magFilter = VK_FILTER_LINEAR;
+        fontSamplerParams.minFilter = VK_FILTER_LINEAR;
+        fontSamplerParams.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+        fontSamplerParams.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+        fontSamplerParams.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+        fontSamplerParams.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+        fontSamplerParams.mipLodBias = 0.0f;
+        fontSamplerParams.compareOp = VK_COMPARE_OP_NEVER;
+        fontSamplerParams.minLod = 0.0f;
+        fontSamplerParams.maxLod = 1.0f;
+        fontSamplerParams.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK;
 
-    auto const fontSampler = RB::CreateSampler(
-        device->GetVkDevice(),
-        fontSamplerParams
-    );
-    MFA_ASSERT(fontSampler != nullptr);
-    _fontPipeline = std::make_shared<TextOverlayPipeline>(_displayRenderPass, fontSampler);
-    AddFont(
-        "JetBrainsMono",
-        Path::Instance()->Get("fonts/JetBrains-Mono/JetBrainsMono-Bold.ttf").c_str()
-    );
-    AddFont(
-        "PublicSans",
-        Path::Instance()->Get("fonts/PublicSans/PublicSans-Bold.ttf").c_str()
-    );
+        auto const fontSampler = RB::CreateSampler(
+            device->GetVkDevice(),
+            fontSamplerParams
+        );
+        MFA_ASSERT(fontSampler != nullptr);
+        _fontPipeline = std::make_shared<TextOverlayPipeline>(_displayRenderPass, fontSampler);
+        AddFont(
+            "JetBrainsMono",
+            Path::Instance()->Get("fonts/JetBrains-Mono/JetBrainsMono-Bold.ttf").c_str()
+        );
+        AddFont(
+            "PublicSans",
+            Path::Instance()->Get("fonts/PublicSans/PublicSans-Bold.ttf").c_str()
+        );
+    }
 
-    auto const solidFillPipeline = std::make_shared<SolidFillPipeline>(_displayRenderPass);
-    _solidFillRenderer = std::make_shared<SolidFillRenderer>(solidFillPipeline);
+    {// Solid fill
+        auto const solidFillPipeline = std::make_shared<SolidFillPipeline>(_displayRenderPass);
+        _solidFillRenderer = std::make_shared<SolidFillRenderer>(solidFillPipeline);
+    }
+
+    {// Image
+        auto const imageSampler = RB::CreateSampler(device->GetVkDevice(), {});
+        auto const imagePipeline = std::make_shared<ImagePipeline>(_displayRenderPass, imageSampler);
+        _imageRenderer = std::make_shared<ImageRenderer>(imagePipeline);
+    }
 
     InstantiateWebViewContainer();
 
@@ -110,7 +123,7 @@ void WebViewApp::Update(float deltaTime)
 
 //=============================================================
 
-void WebViewApp::Render(MFA::RT::CommandRecordState & recordState)
+void WebViewApp::Render(RT::CommandRecordState & recordState)
 {
     auto* device = LogicalDevice::Instance;
     // device->BeginCommandBuffer(
@@ -124,8 +137,7 @@ void WebViewApp::Render(MFA::RT::CommandRecordState & recordState)
         RT::CommandBufferType::Graphic
     );
 
-    _webViewContainer->UpdateBuffers(recordState);
-
+    _webViewContainer->UpdateBuffer(recordState);
     _displayRenderPass->Begin(recordState);
     _webViewContainer->DisplayPass(recordState);
     _displayRenderPass->End(recordState);
@@ -208,8 +220,10 @@ void WebViewApp::InstantiateWebViewContainer()
     WebViewContainer::Params params
     {
         .solidFillRenderer = _solidFillRenderer,
+        .imageRenderer = _imageRenderer,
         .requestBlob = [this](char const *address, bool force) { return RequestBlob(address, force); },
-        .requestFont = [this](char const * font) { return RequestFont(font); }
+        .requestFont = [this](char const * font) { return RequestFont(font); },
+        .requestImage = [this](char const * image) {return RequestImage(image);}
     };
 
     _webViewContainer = std::make_unique<WebViewContainer>(htmlPath.c_str(), clip, params);
@@ -281,14 +295,24 @@ void WebViewApp::AddFont(char const *name, char const *path)
 // TODO: We have to reuse stuff here instead
 //=============================================================
 
-std::shared_ptr<MFA::Blob> WebViewApp::RequestBlob(char const *address, bool force)
+std::shared_ptr<Blob> WebViewApp::RequestBlob(char const *address, bool const ignoreCache)
 {
-    return File::Read(address);
+    if (ignoreCache == false)
+    {
+        auto const findResult = _blobMap.find(address);
+        if (findResult != _blobMap.end())
+        {
+            return findResult->second;
+        }
+    }
+    auto const blob = File::Read(address);
+    _blobMap[address] = blob;
+    return blob;
 }
 
 //=============================================================
 
-std::shared_ptr<MFA::CustomFontRenderer> WebViewApp::RequestFont(char const * font)
+std::shared_ptr<CustomFontRenderer> WebViewApp::RequestFont(char const *font)
 {
     auto const findResult = _fontMap.find(font);
     if (findResult != _fontMap.end())
@@ -297,6 +321,52 @@ std::shared_ptr<MFA::CustomFontRenderer> WebViewApp::RequestFont(char const * fo
     }
     MFA_LOG_WARN("Failed to find font with name %s", font);
     return _fontMap.begin()->second;
+}
+
+//=============================================================
+
+std::shared_ptr<RT::GpuTexture> WebViewApp::RequestImage(char const *imageName)
+{
+    auto const findResult = _imageMap.find(imageName);
+    if (findResult != _imageMap.end())
+    {
+        return findResult->second;
+    }
+    // In this case we want to render a 3d scene as well.
+    if (strncmp(imageName, "scene", strlen("scene")) == 0)
+    {
+        MFA_LOG_ERROR("Not implemented yet!");
+    }
+    else
+    {
+        auto * device = LogicalDevice::Instance;
+
+        auto const path = Path::Instance()->Get(imageName);
+
+        auto const commandBuffer = RB::BeginSingleTimeCommand(device->GetVkDevice(), device->GetGraphicCommandPool());
+
+        auto const cpuTexture = Importer::UncompressedImage(path);
+        
+        auto [gpuTexture, stageBuffer] = RB::CreateTexture(
+            *cpuTexture,
+            device->GetVkDevice(),
+            device->GetPhysicalDevice(),
+            commandBuffer
+        );
+
+        RB::EndAndSubmitSingleTimeCommand(
+            device->GetVkDevice(),
+            device->GetGraphicCommandPool(),
+            device->GetGraphicQueue(),
+            commandBuffer
+        );
+
+        _imageMap[imageName] = gpuTexture;
+
+        return gpuTexture;
+    }
+
+    return nullptr;
 }
 
 //=============================================================

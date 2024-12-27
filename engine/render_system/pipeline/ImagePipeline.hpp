@@ -7,7 +7,7 @@
 
 namespace MFA
 {
-    class TextOverlayPipeline : public IShadingPipeline
+    class ImagePipeline : public IShadingPipeline
     {
     public:
 
@@ -15,7 +15,6 @@ namespace MFA
         {
             glm::vec2 position{};
             glm::vec2 uv{};
-            glm::vec3 color{};
         };
 
         struct PushConstants
@@ -23,31 +22,31 @@ namespace MFA
             glm::mat4 model{};
         };
 
-        explicit TextOverlayPipeline(
+        explicit ImagePipeline(
             std::shared_ptr<DisplayRenderPass> displayRenderPass,
             std::shared_ptr<RT::SamplerGroup> sampler
         );
 
-        ~TextOverlayPipeline();
+        ~ImagePipeline();
 
         [[nodiscard]]
-        bool IsBinded(RT::CommandRecordState const& recordState) const;
+        bool IsBinded(RT::CommandRecordState const &recordState) const;
 
-        void BindPipeline(RT::CommandRecordState& recordState) const;
+        void BindPipeline(RT::CommandRecordState &recordState) const;
 
         [[nodiscard]]
-        RT::DescriptorSetGroup CreateDescriptorSet(RT::GpuTexture const & texture);
+        RT::DescriptorSetGroup CreateDescriptorSet(RT::GpuTexture const &texture);
 
-        void SetPushConstant(RT::CommandRecordState & recordState, PushConstants const & pushConstant) const;
+        void SetPushConstant(RT::CommandRecordState &recordState, PushConstants const &pushConstant) const;
 
         void Reload() override;
 
     private:
 
         void CreateDescriptorLayout();
-        
+
         void CreatePipeline();
-        
+
         std::shared_ptr<DisplayRenderPass> _displayRenderPass{};
 
         std::shared_ptr<RT::SamplerGroup> _sampler{};
@@ -57,6 +56,5 @@ namespace MFA
         std::shared_ptr<RT::DescriptorSetLayoutGroup> _descriptorLayout{};
 
         std::shared_ptr<RT::PipelineGroup> _pipeline{};
-
     };
 }

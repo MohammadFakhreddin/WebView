@@ -21,7 +21,6 @@ cbuffer {
     PushConsts pushConsts;
 };
 
-
 Output main(Input input)
 {
     Output output;

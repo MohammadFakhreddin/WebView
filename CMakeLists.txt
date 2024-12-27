@@ -167,6 +167,5 @@ link_libraries(shared)
 ### Executables #############################################
 
 add_subdirectory("${CMAKE_SOURCE_DIR}/executables/web_view")
-add_subdirectory("${CMAKE_SOURCE_DIR}/executables/font_renderer")
 
 #############################################################

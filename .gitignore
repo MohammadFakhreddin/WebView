@@ -128,3 +128,6 @@ build-debug/*
 build-debug
 
 CmakeLists.txt.user
+
+cmake-build-debug-visual-studio/*
+cmake-build-debug-visual-studio

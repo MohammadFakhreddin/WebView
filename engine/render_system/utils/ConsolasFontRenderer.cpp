@@ -187,6 +187,8 @@ namespace MFA
     {
         _pipeline->BindPipeline(recordState);
 
+        _pipeline->SetPushConstant(recordState, pushConstants);
+
         RB::AutoBindDescriptorSet(
             recordState,
             RB::UpdateFrequency::PerPipeline,

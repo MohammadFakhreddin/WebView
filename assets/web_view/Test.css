@@ -15,10 +15,9 @@
 .center-column {
     display: flex; 
     flex-direction: column; 
-    justify-content: center; 
     align-content: center; 
     align-items: center;
-    width: 100%;
+    justify-content: center;
 }
 .center-row {
     display: flex; 
@@ -26,18 +25,18 @@
     justify-content: center; 
     align-content: center; 
     align-items: center;
-    width: 100%;
 }
 .button {
     background-color: white; 
-    padding: 10px; 
-    border-radius: 32px;
-    width: 200px;
-    font-size: 20px;
+    padding: 1vmin;
+    padding-top: 2vmin; 
+    border-radius: 7vmin;
+    width: 30vmin;
+    font-size: 5vmin;
 }
 .selected {
     background-color: rgb(172, 167, 214); 
 }
 .spacer {
-    padding: 16px;
+    padding: 1vmin;
 }

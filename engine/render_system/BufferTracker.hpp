@@ -37,6 +37,12 @@ namespace MFA
 
         explicit LocalBufferTracker(
             std::shared_ptr<RT::BufferGroup> localBuffer,
+            std::shared_ptr<RT::BufferGroup> hostVisibleBuffer,
+            Alias const & data
+        );
+
+        explicit LocalBufferTracker(
+            std::shared_ptr<RT::BufferGroup> localBuffer,
             std::shared_ptr<RT::BufferGroup> hostVisibleBuffer
         );
 

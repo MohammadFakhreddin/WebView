@@ -2295,7 +2295,7 @@ namespace MFA::RenderBackend
         AutoBindDescriptorSet(
             recordState,
             frequency,
-            descriptorGroup.descriptorSets[recordState.frameIndex]
+            descriptorGroup.descriptorSets[recordState.frameIndex % descriptorGroup.descriptorSets.size()]
         );
     }
 
@@ -2387,7 +2387,7 @@ namespace MFA::RenderBackend
 		    &allocInfo,
 		    descriptorSets.data()
 	    ));
-	    MFA_LOG_INFO("Create descriptor set is successful");
+	    //MFA_LOG_INFO("Create descriptor set is successful");
 
 	    if (schemasCount > 0 && schemas != nullptr)
 	    {
@@ -2400,7 +2400,7 @@ namespace MFA::RenderBackend
 			    schemas
 		    );
 	    }
-
+        
 	    return RT::DescriptorSetGroup{ .descriptorSets = descriptorSets };
     }
 

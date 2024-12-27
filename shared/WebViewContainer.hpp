@@ -5,6 +5,7 @@
 #include "utils/SolidFillRenderer.hpp"
 
 #include "litehtml.h"
+#include "utils/ImageRenderer.hpp"
 
 // Idea: I can port this for unity
 // TODO: We can have custom
@@ -15,16 +16,18 @@ public:
 
 	using FontRenderer = MFA::CustomFontRenderer;
 	using SolidFillRenderer = MFA::SolidFillRenderer;
+    using ImageRenderer = MFA::ImageRenderer;
     using RequestBlob = std::function<std::shared_ptr<MFA::Blob>(char const * address, bool force)>;
     using RequestFont = std::function<std::shared_ptr<FontRenderer>(char const * font)>;
+    using RequestImage = std::function<std::shared_ptr<MFA::RT::GpuTexture>(char const * path)>;
     
     struct Params
     {
         std::shared_ptr<SolidFillRenderer> solidFillRenderer{};
+        std::shared_ptr<ImageRenderer> imageRenderer{};
         RequestBlob requestBlob;
         RequestFont requestFont;
-        // TODO: ImageRenderer, It can be an actual image or just a frame buffer.
-        // TODO: RequestImage function.
+        RequestImage requestImage;
     };
 
 	// TODO: We need an image renderer class as well
@@ -38,7 +41,7 @@ public:
 
 	void Update();
 
-	void UpdateBuffers(const MFA::RT::CommandRecordState& recordState);
+    void UpdateBuffer(MFA::RT::CommandRecordState& recordState);
 
 	void DisplayPass(MFA::RT::CommandRecordState& recordState);
 
@@ -179,8 +182,10 @@ private:
 
     std::string _htmlAddress{};
     std::shared_ptr<SolidFillRenderer> _solidFillRenderer = nullptr;
+    std::shared_ptr<ImageRenderer> _imageRenderer = nullptr;
     RequestBlob _requestBlob{};
     RequestFont _requestFont{};
+    RequestImage _requestImage{};
 
     std::string _parentAddress{};
     std::shared_ptr<MFA::Blob> _htmlBlob{};
@@ -205,9 +210,8 @@ private:
 
     struct State
     {
-        std::vector<std::shared_ptr<FontRenderer::TextData>> textDataList{};
-        std::vector<std::shared_ptr<MFA::LocalBufferTracker>> solidFillBuffers{};
         std::vector<std::function<void(MFA::RT::CommandRecordState &)>> drawCalls{};
+        std::vector<std::function<void(MFA::RT::CommandRecordState &)>> bufferCalls{};
         int lifeTime{};
     };
     std::vector<State> _states{};

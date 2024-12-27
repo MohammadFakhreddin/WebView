@@ -5,9 +5,11 @@
 
 #include <glm/glm.hpp>
 
+#include "IShadingPipeline.hpp"
+
 namespace MFA
 {
-    class SolidFillPipeline
+    class SolidFillPipeline : public IShadingPipeline
     {
     public:
 
@@ -58,11 +60,15 @@ namespace MFA
 
         void SetPushConstant(RT::CommandRecordState & recordState, PushConstants const & pushConstant) const;
 
+        void Reload() override;
+
     private:
 
         void CreatePipeline();
 
-    	std::shared_ptr<DisplayRenderPass> _displayRenderPass{};
+    private:
+
+        std::shared_ptr<DisplayRenderPass> _displayRenderPass{};
         std::shared_ptr<RT::PipelineGroup> _pipeline{};
         
     };

@@ -124,6 +124,13 @@ void TextOverlayPipeline::SetPushConstant(
 
 //-------------------------------------------------------------------------------------------------
 
+void MFA::TextOverlayPipeline::Reload()
+{
+    CreatePipeline();
+}
+
+//-------------------------------------------------------------------------------------------------
+
 void TextOverlayPipeline::CreatePipeline()
 {
 	// Vertex shader

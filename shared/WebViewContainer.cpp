@@ -8,7 +8,11 @@
 
 #include <ranges>
 
+#include "litehtml/render_item.h"
+
 using namespace MFA;
+
+// TODO: For image rendering we have to use set Scissor and viewport.
 
 //=========================================================================================
 
@@ -20,14 +24,18 @@ WebViewContainer::WebViewContainer(
 	: litehtml::document_container()
     , _htmlAddress(htmlAddress)
 	, _solidFillRenderer(std::move(params.solidFillRenderer))
+    , _imageRenderer(std::move(params.imageRenderer))
 	, _requestBlob(std::move(params.requestBlob))
     , _requestFont(std::move(params.requestFont))
+    , _requestImage(std::move(params.requestImage))
 {
     MFA_ASSERT(std::filesystem::exists(htmlAddress));
     _parentAddress = std::filesystem::path(htmlAddress).parent_path().string();
     MFA_ASSERT(_solidFillRenderer != nullptr);
+    MFA_ASSERT(_imageRenderer != nullptr);
     MFA_ASSERT(_requestBlob != nullptr);
     MFA_ASSERT(_requestFont != nullptr);
+    MFA_ASSERT(_requestImage != nullptr);
 
     OnReload(std::move(clip));
 }
@@ -40,40 +48,35 @@ WebViewContainer::~WebViewContainer() = default;
 
 void WebViewContainer::Update()
 {
-    for (auto & state : _states)
+    for (auto &state : _states)
     {
         if (state.lifeTime > 0)
         {
             state.lifeTime -= 1;
         }
     }
-	if (_isDirty == true)
-	{
-		_isDirty = false;
+    if (_isDirty == true)
+    {
+        _isDirty = false;
         SwitchActiveState();
-		_html->render(_clip.width, litehtml::render_all);
-		_html->draw(0, _clip.x, _clip.y, &_clip);
+        _html->render(_clip.width, litehtml::render_all);
+        _html->draw(0, _clip.x, _clip.y, &_clip);
     }
 }
 
 //=========================================================================================
 
-void WebViewContainer::UpdateBuffers(const RT::CommandRecordState& recordState)
+void WebViewContainer::UpdateBuffer(RT::CommandRecordState & recordState)
 {
-	for (auto & textData : _activeState->textDataList)
-	{
-		textData->vertexData->Update(recordState);
-	}
-
-	for (auto &tracker : _activeState->solidFillBuffers)
-	{
-		tracker->Update(recordState);
-	}
+    for (auto &bufferCall : _activeState->bufferCalls)
+    {
+        bufferCall(recordState);
+    }
 }
 
 //=========================================================================================
 
-void WebViewContainer::DisplayPass(RT::CommandRecordState& recordState)
+void WebViewContainer::DisplayPass(RT::CommandRecordState & recordState)
 {
     for (auto &drawCall : _activeState->drawCalls)
 	{
@@ -106,14 +109,14 @@ litehtml::uint_ptr WebViewContainer::create_font(
     auto fontRenderer = _requestFont(faceName);
     MFA_ASSERT(fontRenderer != nullptr);
 
-    fm->height = static_cast<int>(fontRenderer->TextHeight(size));
+    fm->height = static_cast<int>(fontRenderer->TextHeight((float)size));
 	fm->draw_spaces = false;
 
     _fontList.emplace_back();
     auto & font = _fontList.back();
     font.renderer = fontRenderer;
     font.size = size;
-    font.id = _fontList.size();
+    font.id = (int)_fontList.size();
 	return font.id;
 }
 
@@ -168,9 +171,7 @@ void WebViewContainer::draw_conic_gradient(
 	const litehtml::background_layer& layer,
 	const litehtml::background_layer::conic_gradient& gradient
 )
-{
-
-}
+{}
 
 //=========================================================================================
 
@@ -181,6 +182,28 @@ void WebViewContainer::draw_image(
 	const std::string& base_url
 )
 {
+    // TODO: We have to reuse existing buffer and only create new one when needed.
+    auto const imagePath = Path::Get(url.c_str(), _parentAddress.c_str());
+    std::shared_ptr gpuTexture = _requestImage(imagePath.c_str());
+    std::shared_ptr imageData = _imageRenderer->AllocateImageData(
+        *gpuTexture,
+        ImageRenderer::Extent {
+            .x = layer.origin_box.x,
+            .y = layer.origin_box.y,
+            .width = layer.origin_box.width,
+            .height = layer.origin_box.height
+        }
+    );
+
+    _activeState->drawCalls.emplace_back([this, imageData](RT::CommandRecordState & recordState)->void
+    {
+        _imageRenderer->Draw(recordState, ImagePipeline::PushConstants {.model = _modelMat}, *imageData);
+    });
+
+    _activeState->bufferCalls.emplace_back([this, imageData](RT::CommandRecordState & recordState)->void
+    {
+        imageData->vertexData->Update(recordState);
+    });
 	//MFA_LOG_INFO(
 	//	"url=%s, base_url=%s, layer.width: %d, layer.height: %d"
 	//	, url.c_str()
@@ -227,34 +250,35 @@ void WebViewContainer::draw_solid_fill(
 	const litehtml::web_color& color
 )
 {
-	float const borderX = static_cast<float>(layer.border_box.x);
-    float const borderY = static_cast<float>(layer.border_box.y);
+    // TODO: Inverstiage border box.
+	auto const borderX = static_cast<float>(layer.border_box.x);
+    auto const borderY = static_cast<float>(layer.border_box.y);
 
-    float const solidWidth = static_cast<float>(layer.border_box.width);;
-    float const solidHeight = static_cast<float>(layer.border_box.height);
+    auto const solidWidth = static_cast<float>(layer.border_box.width);;
+    auto const solidHeight = static_cast<float>(layer.border_box.height);
 
     glm::vec2 const topLeftPos{ borderX, borderY };
     auto const topLeftColor = ConvertColor(color);
-    float const topLeftX = (float)layer.border_radius.top_left_x;
-    float const topLeftY = (float)layer.border_radius.top_left_y;
+    auto const topLeftX = (float)layer.border_radius.top_left_x;
+    auto const topLeftY = (float)layer.border_radius.top_left_y;
     auto const topLeftRadius = glm::vec2{ topLeftX, topLeftY };
 
     glm::vec2 const topRightPos = topLeftPos + glm::vec2{ solidWidth, 0.0f };
     auto const topRightColor = topLeftColor;
-    float const topRightX = (float)layer.border_radius.top_right_x;
-    float const topRightY = (float)layer.border_radius.top_right_y;
+    auto const topRightX = (float)layer.border_radius.top_right_x;
+    auto const topRightY = (float)layer.border_radius.top_right_y;
     auto const topRightRadius = glm::vec2{ topRightX, topRightY };;
 
     glm::vec2 const bottomLeftPos = topLeftPos + glm::vec2{ 0.0f, solidHeight };
     auto const bottomLeftColor = topLeftColor;
-    float const bottomLeftX = (float)layer.border_radius.bottom_left_x;
-    float const bottomLeftY = (float)layer.border_radius.bottom_left_y;
+    auto const bottomLeftX = (float)layer.border_radius.bottom_left_x;
+    auto const bottomLeftY = (float)layer.border_radius.bottom_left_y;
     auto const bottomLeftRadius = glm::vec2{ bottomLeftX, bottomLeftY };
 
     glm::vec2 const bottomRightPos = topLeftPos + glm::vec2{ solidWidth, solidHeight };
     auto const bottomRightColor = topLeftColor;
-    float const bottomRightX = (float)layer.border_radius.bottom_right_x;
-    float const bottomRightY = (float)layer.border_radius.bottom_right_y;
+    auto const bottomRightX = (float)layer.border_radius.bottom_right_x;
+    auto const bottomRightY = (float)layer.border_radius.bottom_right_y;
 	auto const bottomRightRadius = glm::vec2{bottomRightX, bottomRightY};
 
 	std::shared_ptr<LocalBufferTracker> bufferTracker = _solidFillRenderer->AllocateBuffer(
@@ -273,16 +297,20 @@ void WebViewContainer::draw_solid_fill(
 		topRightRadius,
 		bottomRightRadius
 	);
-    _activeState->solidFillBuffers.emplace_back(bufferTracker);
 
 	_activeState->drawCalls.emplace_back([this, bufferTracker](RT::CommandRecordState &recordState) -> void
 	{
-        _solidFillRenderer->Draw(
+	    _solidFillRenderer->Draw(
             recordState,
             SolidFillPipeline::PushConstants{.model = _modelMat},
             *bufferTracker
         );
 	});
+
+    _activeState->bufferCalls.emplace_back([this, bufferTracker](RT::CommandRecordState &recordState) -> void
+    {
+        bufferTracker->Update(recordState);
+    });
 }
 
 //=========================================================================================
@@ -296,29 +324,32 @@ void WebViewContainer::draw_text(
 )
 {
     auto & fontData = _fontList[hFont - 1];
-    auto const textWidth = fontData.renderer->TextWidth(std::string_view{text, strlen(text)}, fontData.size);
-    // We can also use ImGui Draw text
+    // TODO: We can reuse the buffer instead. There is no need to destroy and recreate the buffer everytime.
     std::shared_ptr textData = fontData.renderer->AllocateTextData();
 
 	FontRenderer::TextParams textParams{};
 	textParams.color = ConvertColor(color);
 	textParams.hTextAlign = FontRenderer::HorizontalTextAlign::Left;
-    textParams.fontSizeInPixels = fontData.size;
+    textParams.fontSizeInPixels = (float)fontData.size;
 	
 	auto const x = static_cast<float>(pos.x);
 	auto const y = static_cast<float>(pos.y);
 
 	fontData.renderer->AddText(*textData, text, x, y, textParams);
-    _activeState->textDataList.emplace_back(textData);
 
-	_activeState->drawCalls.emplace_back([this, textData, &fontData](RT::CommandRecordState &recordState) -> void
+    _activeState->drawCalls.emplace_back([this, textData, &fontData](RT::CommandRecordState &recordState) -> void
 	{
-		fontData.renderer->Draw(
+	    fontData.renderer->Draw(
             recordState,
             TextOverlayPipeline::PushConstants{ .model = _modelMat },
             *textData
         );
 	});
+
+    _activeState->bufferCalls.emplace_back([this, textData](RT::CommandRecordState &recordState) -> void
+    {
+        textData->vertexData->Update(recordState);
+    });
 }
 
 //=========================================================================================
@@ -350,9 +381,11 @@ int WebViewContainer::get_default_font_size() const
 
 void WebViewContainer::get_image_size(const char* src, const char* baseurl, litehtml::size& sz)
 {
+    auto image = _requestImage(Path::Instance()->Get(src, _parentAddress.c_str()).c_str());
+    // TODO
 	//MFA_LOG_INFO("src: %s, baseurl: %s", src, baseurl);
-	sz.width = 100;
-	sz.height = 100;
+	// sz.width = 100;
+	// sz.height = 100;
 }
 
 //=========================================================================================
@@ -365,7 +398,14 @@ void WebViewContainer::get_language(litehtml::string& language, litehtml::string
 
 void WebViewContainer::get_media_features(litehtml::media_features& media) const
 {
-
+    auto * device = LogicalDevice::Instance;
+    media.width = device->GetWindowWidth();
+    media.height = device->GetWindowHeight();
+    media.device_width = media.width;
+    media.device_height = media.height;
+    media.color = 4;
+    media.type = litehtml::media_type_screen;
+    media.resolution = 1;
 }
 
 //=========================================================================================
@@ -376,13 +416,12 @@ void WebViewContainer::import_css(
     litehtml::string& baseurl
 )
 {
-    MFA_LOG_INFO(
-        "Requested import css.\nText: %s\nurl: %s\nbaseurl: %s"
-        , text.c_str(), url.c_str(), baseurl.c_str()
-    );
-    // TODO: Use resource manager here!
+    // MFA_LOG_INFO(
+    //     "Requested import css.\nText: %s\nurl: %s\nbaseurl: %s"
+    //     , text.c_str(), url.c_str(), baseurl.c_str()
+    // );
     auto const cssPath = Path::Get(url.c_str(), _parentAddress.c_str());
-    auto const cssBlob = File::Read(cssPath);
+    auto const cssBlob = _requestBlob(cssPath.c_str(), true);
     text = cssBlob->As<char const>();
 }
 
@@ -396,7 +435,7 @@ void WebViewContainer::link(const std::shared_ptr<litehtml::document>& doc, cons
 
 void WebViewContainer::load_image(const char* src, const char* baseurl, bool redraw_on_ready)
 {
-	//MFA_LOG_INFO("src: %s, baseurl: %s", src, baseurl);
+
 }
 
 //=========================================================================================
@@ -416,7 +455,37 @@ void WebViewContainer::on_mouse_event(const litehtml::element::ptr& el, litehtml
 
 int WebViewContainer::pt_to_px(int pt) const
 {
-	return 1;
+    auto * device = LogicalDevice::Instance;
+    auto const windowWidth = static_cast<float>(device->GetWindowWidth());
+    auto const windowHeight = static_cast<float>(device->GetWindowHeight());
+
+    float scaleFactorX = 1.0f;
+    float scaleFactorY = 1.0f;
+
+    float bodyWidth = _bodyWidth;
+    if (bodyWidth <= 0)
+    {
+        bodyWidth = windowWidth;
+    }
+    float wScale = (float)windowWidth / bodyWidth;
+    scaleFactorX = wScale;
+
+    float bodyHeight = _bodyHeight;
+    if (bodyHeight <= 0)
+    {
+        bodyHeight = windowHeight;
+    }
+    float hScale = (float)windowHeight / bodyHeight;
+    scaleFactorY = hScale;
+
+    float scaleFactor = std::min(scaleFactorX, scaleFactorY);
+     scaleFactor = std::max(scaleFactor, 1.0f);
+
+    // float halfWidth = windowWidth * 0.5f;
+    // float halfHeight = windowHeight * 0.5f;
+    // float scaleX = (1.0f / halfWidth) * scaleFactor;
+    // float scaleY = (1.0f / halfHeight) * scaleFactor;
+	return pt * scaleFactor;
 }
 
 //=========================================================================================
@@ -494,9 +563,8 @@ void WebViewContainer::SwitchActiveState()
         _states.emplace_back();
     }
     _activeState = &_states[_activeIdx];
-    _activeState->textDataList.clear();
-    _activeState->solidFillBuffers.clear();
     _activeState->drawCalls.clear();
+    _activeState->bufferCalls.clear();
 }
 
 //=========================================================================================
@@ -563,6 +631,8 @@ void WebViewContainer::InvalidateStyles(litehtml::element::ptr element)
 {
 	element->apply_stylesheet(_html->m_styles);
 	element->compute_styles();
+    // TODO: Try this
+    //element->draw(0, 0, 0, &_clip, );
 	_isDirty = true;
 }
 
@@ -573,10 +643,6 @@ void WebViewContainer::OnReload(litehtml::position clip)
     _htmlBlob = File::Read(_htmlAddress);
     char const *htmlText = _htmlBlob->As<char const>();
     _html = litehtml::document::createFromString(htmlText, this);
-
-    auto *device = LogicalDevice::Instance;
-    auto const windowWidth = static_cast<float>(device->GetWindowWidth());
-    auto const windowHeight = static_cast<float>(device->GetWindowHeight());
 
     auto const bodyTag = GetElementByTag("body");
     if (bodyTag != nullptr)
@@ -602,28 +668,29 @@ void WebViewContainer::OnResize(litehtml::position clip)
     auto *device = LogicalDevice::Instance;
     auto const windowWidth = static_cast<float>(device->GetWindowWidth());
     auto const windowHeight = static_cast<float>(device->GetWindowHeight());
+    
+     /*float scaleFactorX = 1.0f;
+     float scaleFactorY = 1.0f;
+    
+     float bodyWidth = _bodyWidth;
+     if (bodyWidth <= 0)
+     {
+         bodyWidth = windowWidth;
+     }
+     float wScale = (float)windowWidth / bodyWidth;
+     scaleFactorX = wScale;
+    
+     float bodyHeight = _bodyHeight;
+     if (bodyHeight <= 0)
+     {
+         bodyHeight = windowHeight;
+     }
+     float hScale = (float)windowHeight / bodyHeight;
+     scaleFactorY = hScale;*/
 
-    float scaleFactorX = 1.0f;
-    float scaleFactorY = 1.0f;
-
-    float bodyWidth = _bodyWidth;
-    if (bodyWidth <= 0)
-    {
-        bodyWidth = windowWidth;
-    }
-    float wScale = (float)windowWidth / bodyWidth;
-    scaleFactorX = wScale;
-
-    float bodyHeight = _bodyHeight;
-    if (bodyHeight <= 0)
-    {
-        bodyHeight = windowHeight;
-    }
-    float hScale = (float)windowHeight / bodyHeight;
-    scaleFactorY = hScale;
-
-    float scaleFactor = std::min(scaleFactorX, scaleFactorY);
-    scaleFactor = std::max(scaleFactor, 1.0f);
+    //float scaleFactor = std::min(scaleFactorX, scaleFactorY);
+     //scaleFactor = std::max(scaleFactor, 1.0f);
+    float scaleFactor = 1.0f;
 
     float halfWidth = windowWidth * 0.5f;
     float halfHeight = windowHeight * 0.5f;
@@ -638,6 +705,9 @@ void WebViewContainer::OnResize(litehtml::position clip)
     );
 
     _isDirty = true;
+
+    // It is not working as expected at the moment
+    _html->media_changed();
 }
 
 //=========================================================================================

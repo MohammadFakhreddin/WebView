@@ -48,7 +48,7 @@ std::shared_ptr<MFA::LocalBufferTracker> MFA::SolidFillRenderer::AllocateBuffer(
 
 	auto const * device = LogicalDevice::Instance;
 	// This should be 1
-	int const bufferCount = device->GetMaxFramePerFlight();
+	int const bufferCount = 1;
 
 	auto vertexBuffer = RB::CreateBufferGroup(
 		device->GetVkDevice(), 
@@ -80,6 +80,7 @@ void MFA::SolidFillRenderer::Draw(
     LocalBufferTracker const& vertexBuffer
 ) const
 {
+    // Note: We could have achieve the same thing with viewport and scissor and a fixed vertex buffer.
 	_pipeline->BindPipeline(recordState);
 
     _pipeline->SetPushConstant(recordState, pushConstants);

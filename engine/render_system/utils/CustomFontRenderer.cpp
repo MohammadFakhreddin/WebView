@@ -205,10 +205,12 @@ namespace MFA
     void CustomFontRenderer::Draw(
         RT::CommandRecordState &recordState,
         Pipeline::PushConstants const &pushConstants,
-        TextData &data
+        TextData const &data
     ) const
     {
         _pipeline->BindPipeline(recordState);
+
+        _pipeline->SetPushConstant(recordState, pushConstants);
 
         RB::AutoBindDescriptorSet(
             recordState,
