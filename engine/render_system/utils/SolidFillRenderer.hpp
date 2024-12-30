@@ -33,6 +33,25 @@ namespace MFA
 			Radius const & bottomRightBorderRadius
 		);
 
+        static void UpdateBuffer(
+            LocalBufferTracker & bufferTracker,
+
+            Position const &topLeftPos,
+            Position const &bottomLeftPos,
+            Position const &topRightPos,
+            Position const &bottomRightPos,
+
+            Color const &topLeftColor,
+            Color const &bottomLeftColor,
+            Color const &topRightColor,
+            Color const &bottomRightColor,
+
+            Radius const &topLeftBorderRadius,
+            Radius const &bottomLeftBorderRadius,
+            Radius const &topRightBorderRadius,
+            Radius const &bottomRightBorderRadius
+        );
+
 		void Draw(
             RT::CommandRecordState & recordState,
             Pipeline::PushConstants const & pushConstants,

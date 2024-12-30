@@ -28,8 +28,8 @@ void WebViewApp::Run()
     );
 
     device->ResizeEventSignal2.Register([this]()->void {
-        InstantiateWebViewContainer();
-        //Resize();
+        //InstantiateWebViewContainer();
+        Resize();
     });
 
     {// Font

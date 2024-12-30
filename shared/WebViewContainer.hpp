@@ -8,7 +8,6 @@
 #include "utils/ImageRenderer.hpp"
 
 // Idea: I can port this for unity
-// TODO: We can have custom
 class WebViewContainer : public litehtml::document_container
 {
 
@@ -212,6 +211,9 @@ private:
     {
         std::vector<std::function<void(MFA::RT::CommandRecordState &)>> drawCalls{};
         std::vector<std::function<void(MFA::RT::CommandRecordState &)>> bufferCalls{};
+        std::unordered_map<size_t, std::shared_ptr<FontRenderer::TextData>> _textMap{};
+        std::unordered_map<size_t, std::shared_ptr<ImageRenderer::ImageData>> _imageMap{};
+        std::unordered_map<size_t, std::shared_ptr<MFA::LocalBufferTracker>> _solidMap{};
         int lifeTime{};
     };
     std::vector<State> _states{};

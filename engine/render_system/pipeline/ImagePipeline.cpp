@@ -55,7 +55,7 @@ void ImagePipeline::BindPipeline(RT::CommandRecordState &recordState) const
 
 //-------------------------------------------------------------------------------------------------
 
-RT::DescriptorSetGroup ImagePipeline::CreateDescriptorSet(RT::GpuTexture const & texture)
+RT::DescriptorSetGroup ImagePipeline::CreateDescriptorSet(RT::GpuTexture const & texture) const
 {
     auto descriptorSetGroup = RB::CreateDescriptorSet(
         LogicalDevice::Instance->GetVkDevice(),
@@ -64,21 +64,54 @@ RT::DescriptorSetGroup ImagePipeline::CreateDescriptorSet(RT::GpuTexture const &
         1
     );
 
-    auto const& descriptorSet = descriptorSetGroup.descriptorSets[0];
+    //auto const& descriptorSet = descriptorSetGroup.descriptorSets[0];
+    //MFA_ASSERT(descriptorSet != VK_NULL_HANDLE);
+
+    //DescriptorSetSchema schema { descriptorSet };
+
+    //VkDescriptorImageInfo info {
+    //    .sampler = _sampler->sampler,
+    //    .imageView = texture.imageView->imageView,
+    //    .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+    //};
+    //schema.AddCombinedImageSampler(&info);
+
+    //schema.UpdateDescriptorSets();
+    UpdateDescriptorSet(descriptorSetGroup, texture);
+
+    return descriptorSetGroup;
+}
+
+//-------------------------------------------------------------------------------------------------
+
+void ImagePipeline::UpdateDescriptorSet(RT::DescriptorSetGroup &descriptorSetGroup, RT::GpuTexture const &texture) const
+{
+    MFA_ASSERT(descriptorSetGroup.descriptorSets.size() == 1);
+
+    auto const &descriptorSet = descriptorSetGroup.descriptorSets[0];
     MFA_ASSERT(descriptorSet != VK_NULL_HANDLE);
 
-    DescriptorSetSchema schema { descriptorSet };
+    DescriptorSetSchema schema{descriptorSet};
 
-    VkDescriptorImageInfo info {
-        .sampler = _sampler->sampler,
-        .imageView = texture.imageView->imageView,
-        .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-    };
+    VkDescriptorImageInfo info{.sampler = _sampler->sampler,
+                               .imageView = texture.imageView->imageView,
+                               .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
     schema.AddCombinedImageSampler(&info);
 
     schema.UpdateDescriptorSets();
+}
 
-    return descriptorSetGroup;
+//-------------------------------------------------------------------------------------------------
+
+void ImagePipeline::FreeDescriptorSet(RT::DescriptorSetGroup &descriptorSetGroup) const
+{
+    auto *device = LogicalDevice::Instance;
+    vkFreeDescriptorSets(
+        device->GetVkDevice(),
+        _descriptorPool->descriptorPool,
+        descriptorSetGroup.descriptorSets.size(),
+        descriptorSetGroup.descriptorSets.data()
+    );
 }
 
 //-------------------------------------------------------------------------------------------------

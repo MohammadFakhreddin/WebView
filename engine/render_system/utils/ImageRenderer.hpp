@@ -31,6 +31,8 @@ namespace MFA
         [[nodiscard]]
         std::unique_ptr<ImageData> AllocateImageData(RT::GpuTexture const & gpuTexture, Extent const & extent) const;
 
+        void UpdateImageData(ImageData &imageData, RT::GpuTexture const &gpuTexture, Extent const &extent) const;
+
         void Draw(
             RT::CommandRecordState & recordState,
             Pipeline::PushConstants const & pushConstants,

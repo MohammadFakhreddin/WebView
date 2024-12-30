@@ -410,7 +410,7 @@ namespace MFA::RenderBackend
 
     std::shared_ptr<RT::DescriptorSetLayoutGroup> CreateDescriptorSetLayout(
         VkDevice device,
-        uint8_t const bindings_count,
+        uint8_t bindings_count,
         VkDescriptorSetLayoutBinding * bindings
     );
 
@@ -419,7 +419,8 @@ namespace MFA::RenderBackend
     // TODO: We need to ask for pool sizes instead
     std::shared_ptr<RT::DescriptorPool> CreateDescriptorPool(
         VkDevice device,
-        uint32_t const maxSets
+        uint32_t maxSets,
+        VkDescriptorPoolCreateFlags flags = 0
     );
 
     void DestroyDescriptorPool(

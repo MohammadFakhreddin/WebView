@@ -53,6 +53,26 @@ namespace MFA
     }
 
     //------------------------------------------------------------------------------------------------------------------
+    
+    void ImageRenderer::UpdateImageData(
+        ImageData &imageData,
+        RT::GpuTexture const &gpuTexture,
+        Extent const &extent
+    ) const
+    {
+        imageData.extent = extent;
+        auto * rawData = imageData.vertexData->Data();
+        Pipeline::Vertex * vertexData = reinterpret_cast<Pipeline::Vertex *>(rawData);
+        vertexData[0].position = {extent.x, extent.y};
+        vertexData[1].position = {extent.x + extent.width, extent.y};
+        vertexData[2].position = {extent.x, extent.y + extent.height};
+        vertexData[3].position = {extent.x + extent.width, extent.y + extent.height};
+
+        // TODO: We need to wrap descriptor sets as well to be freeable
+        _pipeline->UpdateDescriptorSet(imageData.descriptorSet, gpuTexture);
+    }
+
+    //------------------------------------------------------------------------------------------------------------------
     // TODO: I need to use viewport and scissor to render within area.
     void ImageRenderer::Draw(
         RT::CommandRecordState & recordState,

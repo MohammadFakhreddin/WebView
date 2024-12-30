@@ -74,6 +74,45 @@ std::shared_ptr<MFA::LocalBufferTracker> MFA::SolidFillRenderer::AllocateBuffer(
 
 //------------------------------------------------------------------
 
+void MFA::SolidFillRenderer::UpdateBuffer(
+    LocalBufferTracker &bufferTracker,
+    Position const &topLeftPos,
+    Position const &bottomLeftPos,
+    Position const &topRightPos,
+    Position const &bottomRightPos,
+    Color const &topLeftColor,
+    Color const &bottomLeftColor,
+    Color const &topRightColor,
+    Color const &bottomRightColor,
+    Radius const &topLeftBorderRadius,
+    Radius const &bottomLeftBorderRadius,
+    Radius const &topRightBorderRadius,
+    Radius const &bottomRightBorderRadius
+)
+{
+    Pipeline::Instance data{
+        .topLeftPos = topLeftPos,
+        .topLeftRadius = topLeftBorderRadius,
+        .topLeftColor = topLeftColor,
+
+        .bottomLeftPos = bottomLeftPos,
+        .bottomLeftRadius = bottomLeftBorderRadius,
+        .bottomLeftColor = bottomLeftColor,
+
+        .topRightPos = topRightPos,
+        .topRightRadius = topRightBorderRadius,
+        .topRightColor = topRightColor,
+
+        .bottomRightPos = bottomRightPos,
+        .bottomRightRadius = bottomRightBorderRadius,
+        .bottomRightColor = bottomRightColor,
+    };
+
+    bufferTracker.SetData(Alias(data));
+}
+
+//------------------------------------------------------------------
+
 void MFA::SolidFillRenderer::Draw(
     RT::CommandRecordState& recordState,
     Pipeline::PushConstants const & pushConstants,

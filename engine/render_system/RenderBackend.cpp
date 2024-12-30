@@ -712,7 +712,7 @@ namespace MFA::RenderBackend
 
         VK_Check(vkCreateDevice(physicalDevice, &deviceCreateInfo, nullptr, &logicalDevice.device));
         MFA_ASSERT(logicalDevice.device != nullptr);
-        MFA_LOG_INFO("Logical device create was successful");
+        //MFA_LOG_INFO("Logical device create was successful");
         vkGetPhysicalDeviceMemoryProperties(physicalDevice, &logicalDevice.physicalMemoryProperties);
 
         return logicalDevice;
@@ -774,7 +774,7 @@ namespace MFA::RenderBackend
             commandBuffers.data()
         ));
 
-        MFA_LOG_INFO("Allocated graphics command buffers.");
+        //MFA_LOG_INFO("Allocated graphics command buffers.");
 
         // Command buffer data gets recorded each time
         return commandBuffers;
@@ -1182,7 +1182,7 @@ namespace MFA::RenderBackend
             std::move(imageGroup),
             std::move(imageView),
             depthFormat
-            );
+        );
     }
 
     //-------------------------------------------------------------------------------------------------
@@ -1583,7 +1583,7 @@ namespace MFA::RenderBackend
         VkSwapchainKHR swapChain{};
         VK_Check(vkCreateSwapchainKHR(device, &createInfo, nullptr, &swapChain));
 
-        MFA_LOG_INFO("Created swap chain");
+        //MFA_LOG_INFO("Created swap chain");
 
         //swapChainGroup.swapChainFormat = selected_surface_format.format;
         VkFormat const swapChainFormat = surfaceFormat.format;
@@ -1624,13 +1624,13 @@ namespace MFA::RenderBackend
             MFA_ASSERT(swapChainImageViews[imageIndex] != VK_NULL_HANDLE);
         }
 
-        MFA_LOG_INFO("Acquired swap chain images");
+        //MFA_LOG_INFO("Acquired swap chain images");
         return std::make_shared<RT::SwapChainGroup>(
             swapChain,
             swapChainFormat,
             swapChainImages,
             swapChainImageViews
-            );
+        );
     }
 
     //-------------------------------------------------------------------------------------------------
@@ -1713,13 +1713,13 @@ namespace MFA::RenderBackend
         // Determine number of images for swap chain
         auto const imageCount = ComputeSwapChainImagesCount(surfaceCapabilities);
 
-        MFA_LOG_INFO(
-            "Surface extend width: %d, height: %d"
-            , surfaceCapabilities.currentExtent.width
-            , surfaceCapabilities.currentExtent.height
-        );
+        //MFA_LOG_INFO(
+        //    "Surface extend width: %d, height: %d"
+        //    , surfaceCapabilities.currentExtent.width
+        //    , surfaceCapabilities.currentExtent.height
+        //);
 
-        MFA_LOG_INFO("Using %d images for swap chain.", imageCount);
+        //MFA_LOG_INFO("Using %d images for swap chain.", imageCount);
         MFA_ASSERT(surfaceFormats.size() <= 255);
         // Select a surface format
         auto const selectedSurfaceFormat = ChooseSurfaceFormat(
@@ -2136,7 +2136,7 @@ namespace MFA::RenderBackend
 		    .pCode = shaderCode->As<uint32_t>(),
 	    };
 	    VK_Check(vkCreateShaderModule(device, &createInfo, nullptr, &shaderModule));
-	    MFA_LOG_INFO("Creating shader module was successful");
+	    //MFA_LOG_INFO("Creating shader module was successful");
 	    gpuShader = std::make_shared<RT::GpuShader>(
 		    shaderModule,
 		    cpuShader->stage,
@@ -2190,7 +2190,8 @@ namespace MFA::RenderBackend
 
     std::shared_ptr<RT::DescriptorPool> CreateDescriptorPool(
         VkDevice device,
-        uint32_t const maxSets
+        uint32_t const maxSets,
+        VkDescriptorPoolCreateFlags flags
     )
     {
         std::vector<VkDescriptorPoolSize> poolSizes{};
@@ -2230,6 +2231,7 @@ namespace MFA::RenderBackend
         poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
         poolInfo.pPoolSizes = poolSizes.data();
         poolInfo.maxSets = maxSets;
+        poolInfo.flags |= flags;
 
         VkDescriptorPool descriptorPool{};
 

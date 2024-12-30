@@ -35,7 +35,11 @@ namespace MFA
         void BindPipeline(RT::CommandRecordState &recordState) const;
 
         [[nodiscard]]
-        RT::DescriptorSetGroup CreateDescriptorSet(RT::GpuTexture const &texture);
+        RT::DescriptorSetGroup CreateDescriptorSet(RT::GpuTexture const &texture) const;
+
+        void UpdateDescriptorSet(RT::DescriptorSetGroup &descriptorSetGroup, RT::GpuTexture const &texture) const;
+
+        void FreeDescriptorSet(RT::DescriptorSetGroup &descriptorSetGroup) const;
 
         void SetPushConstant(RT::CommandRecordState &recordState, PushConstants const &pushConstant) const;
 

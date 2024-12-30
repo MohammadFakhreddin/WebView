@@ -5,12 +5,90 @@
 #include "RenderBackend.hpp"
 #include "BedrockFile.hpp"
 #include "BedrockPath.hpp"
-
-#include <ranges>
+#include "ScopeProfiler.hpp"
 
 #include "litehtml/render_item.h"
 
+#include <ranges>
+
 using namespace MFA;
+
+namespace std
+{
+    template <>
+    struct hash<litehtml::border_radiuses>
+    {
+        size_t operator()(const litehtml::border_radiuses &radii) const
+        {
+            size_t h1 = std::hash<int>()(radii.top_left_x);
+            size_t h2 = std::hash<int>()(radii.top_left_y);
+            size_t h3 = std::hash<int>()(radii.top_right_x);
+            size_t h4 = std::hash<int>()(radii.top_right_y);
+            size_t h5 = std::hash<int>()(radii.bottom_right_x);
+            size_t h6 = std::hash<int>()(radii.bottom_right_y);
+            size_t h7 = std::hash<int>()(radii.bottom_left_x);
+            size_t h8 = std::hash<int>()(radii.bottom_left_y);
+
+            // Combine the hash values
+            return h1 ^ (h2 << 1) ^ (h3 << 2) ^ (h4 << 3) ^ (h5 << 4) ^ (h6 << 5) ^ (h7 << 6) ^ (h8 << 7);
+        }
+    };
+
+    template <>
+    struct hash<litehtml::position>
+    {
+        size_t operator()(const litehtml::position &box) const
+        {
+            size_t h1 = std::hash<int>()(box.x);
+            size_t h2 = std::hash<int>()(box.y);
+            size_t h3 = std::hash<int>()(box.width);
+            size_t h4 = std::hash<int>()(box.height);
+
+            // Combine the hash values
+            return h1 ^ (h2 << 1) ^ (h3 << 2) ^ (h4 << 3);
+        }
+    };
+
+    template <>
+    struct hash<litehtml::background_layer>
+    {
+        size_t operator()(const litehtml::background_layer &layer) const
+        {
+            size_t h1 = std::hash<litehtml::position>()(layer.border_box);
+            size_t h2 = std::hash<litehtml::border_radiuses>()(layer.border_radius);
+            size_t h3 = std::hash<litehtml::position>()(layer.clip_box);
+            size_t h4 = std::hash<litehtml::position>()(layer.origin_box);
+            size_t h5 = std::hash<int>()(layer.attachment);
+            size_t h6 = std::hash<int>()(layer.repeat);
+            size_t h7 = std::hash<bool>()(layer.is_root);
+
+            // Combine hashes
+            return h1 ^ (h2 << 1) ^ (h3 << 2) ^ (h4 << 3) ^ (h5 << 4) ^ (h6 << 5) ^ (h7 << 6);
+        }
+    };
+}; // namespace std
+
+// Equality operator defined outside the class
+bool operator==(const litehtml::border_radiuses &lhs, const litehtml::border_radiuses &rhs)
+{
+    return lhs.top_left_x == rhs.top_left_x && lhs.top_left_y == rhs.top_left_y && lhs.top_right_x == rhs.top_right_x &&
+        lhs.top_right_y == rhs.top_right_y && lhs.bottom_right_x == rhs.bottom_right_x &&
+        lhs.bottom_right_y == rhs.bottom_right_y && lhs.bottom_left_x == rhs.bottom_left_x &&
+        lhs.bottom_left_y == rhs.bottom_left_y;
+}
+
+bool operator==(const litehtml::position &lhs, const litehtml::position &rhs)
+{
+    return lhs.x == rhs.x && lhs.y == rhs.y && lhs.width == rhs.width && lhs.height == rhs.height;
+}
+
+bool operator==(const litehtml::background_layer &lhs, const litehtml::background_layer &rhs)
+{
+    return lhs.border_box == rhs.border_box && lhs.border_radius == rhs.border_radius && lhs.clip_box == rhs.clip_box &&
+        lhs.origin_box == rhs.origin_box && lhs.attachment == rhs.attachment && lhs.repeat == rhs.repeat &&
+        lhs.is_root == rhs.is_root;
+}
+
 
 // TODO: For image rendering we have to use set Scissor and viewport.
 
@@ -57,10 +135,12 @@ void WebViewContainer::Update()
     }
     if (_isDirty == true)
     {
+        //SCOPE_Profiler("Invalidate took");
         _isDirty = false;
         SwitchActiveState();
+        // We don't need to call render everytime
         _html->render(_clip.width, litehtml::render_all);
-        _html->draw(0, _clip.x, _clip.y, &_clip);
+        _html->draw(_activeIdx, _clip.x, _clip.y, &_clip);
     }
 }
 
@@ -110,7 +190,7 @@ litehtml::uint_ptr WebViewContainer::create_font(
     MFA_ASSERT(fontRenderer != nullptr);
 
     fm->height = static_cast<int>(fontRenderer->TextHeight((float)size));
-	fm->draw_spaces = false;
+    fm->draw_spaces = false;
 
     _fontList.emplace_back();
     auto & font = _fontList.back();
@@ -182,18 +262,27 @@ void WebViewContainer::draw_image(
 	const std::string& base_url
 )
 {
-    // TODO: We have to reuse existing buffer and only create new one when needed.
+    auto hash = std::hash<litehtml::background_layer>()(layer);
     auto const imagePath = Path::Get(url.c_str(), _parentAddress.c_str());
     std::shared_ptr gpuTexture = _requestImage(imagePath.c_str());
-    std::shared_ptr imageData = _imageRenderer->AllocateImageData(
-        *gpuTexture,
-        ImageRenderer::Extent {
-            .x = layer.origin_box.x,
-            .y = layer.origin_box.y,
-            .width = layer.origin_box.width,
-            .height = layer.origin_box.height
-        }
-    );
+    auto const extent = ImageRenderer::Extent{
+        .x = layer.origin_box.x,
+        .y = layer.origin_box.y,
+        .width = layer.origin_box.width,
+        .height = layer.origin_box.height
+    };
+    std::shared_ptr<ImageRenderer::ImageData> imageData = nullptr;
+    auto const findResult = _activeState->_imageMap.find(hash);
+    if (findResult == _activeState->_imageMap.end())
+    {
+        imageData = _imageRenderer->AllocateImageData(*gpuTexture, extent);
+        _activeState->_imageMap[hash] = imageData;
+    }
+    else
+    {
+        imageData = findResult->second;
+        _imageRenderer->UpdateImageData(*imageData, *gpuTexture, extent);
+    }
 
     _activeState->drawCalls.emplace_back([this, imageData](RT::CommandRecordState & recordState)->void
     {
@@ -204,13 +293,6 @@ void WebViewContainer::draw_image(
     {
         imageData->vertexData->Update(recordState);
     });
-	//MFA_LOG_INFO(
-	//	"url=%s, base_url=%s, layer.width: %d, layer.height: %d"
-	//	, url.c_str()
-	//	, base_url.c_str()
-	//	, layer.border_box.width
-	//	, layer.border_box.height
-	//);
 }
 
 //=========================================================================================
@@ -250,53 +332,63 @@ void WebViewContainer::draw_solid_fill(
 	const litehtml::web_color& color
 )
 {
-    // TODO: Inverstiage border box.
-	auto const borderX = static_cast<float>(layer.border_box.x);
+    std::shared_ptr<LocalBufferTracker> bufferTracker = nullptr;
+    
+    auto hash = std::hash<litehtml::background_layer>()(layer);
+
+    auto const borderX = static_cast<float>(layer.border_box.x);
     auto const borderY = static_cast<float>(layer.border_box.y);
 
-    auto const solidWidth = static_cast<float>(layer.border_box.width);;
+    auto const solidWidth = static_cast<float>(layer.border_box.width);
+    ;
     auto const solidHeight = static_cast<float>(layer.border_box.height);
 
-    glm::vec2 const topLeftPos{ borderX, borderY };
+    glm::vec2 const topLeftPos{borderX, borderY};
     auto const topLeftColor = ConvertColor(color);
     auto const topLeftX = (float)layer.border_radius.top_left_x;
     auto const topLeftY = (float)layer.border_radius.top_left_y;
-    auto const topLeftRadius = glm::vec2{ topLeftX, topLeftY };
+    auto const topLeftRadius = glm::vec2{topLeftX, topLeftY};
 
-    glm::vec2 const topRightPos = topLeftPos + glm::vec2{ solidWidth, 0.0f };
+    glm::vec2 const topRightPos = topLeftPos + glm::vec2{solidWidth, 0.0f};
     auto const topRightColor = topLeftColor;
     auto const topRightX = (float)layer.border_radius.top_right_x;
     auto const topRightY = (float)layer.border_radius.top_right_y;
-    auto const topRightRadius = glm::vec2{ topRightX, topRightY };;
+    auto const topRightRadius = glm::vec2{topRightX, topRightY};
+    ;
 
-    glm::vec2 const bottomLeftPos = topLeftPos + glm::vec2{ 0.0f, solidHeight };
+    glm::vec2 const bottomLeftPos = topLeftPos + glm::vec2{0.0f, solidHeight};
     auto const bottomLeftColor = topLeftColor;
     auto const bottomLeftX = (float)layer.border_radius.bottom_left_x;
     auto const bottomLeftY = (float)layer.border_radius.bottom_left_y;
-    auto const bottomLeftRadius = glm::vec2{ bottomLeftX, bottomLeftY };
+    auto const bottomLeftRadius = glm::vec2{bottomLeftX, bottomLeftY};
 
-    glm::vec2 const bottomRightPos = topLeftPos + glm::vec2{ solidWidth, solidHeight };
+    glm::vec2 const bottomRightPos = topLeftPos + glm::vec2{solidWidth, solidHeight};
     auto const bottomRightColor = topLeftColor;
     auto const bottomRightX = (float)layer.border_radius.bottom_right_x;
     auto const bottomRightY = (float)layer.border_radius.bottom_right_y;
-	auto const bottomRightRadius = glm::vec2{bottomRightX, bottomRightY};
-
-	std::shared_ptr<LocalBufferTracker> bufferTracker = _solidFillRenderer->AllocateBuffer(
-		topLeftPos,
-		bottomLeftPos,
-		topRightPos,
-		bottomRightPos,
-
-		topLeftColor,
-		bottomLeftColor,
-		topRightColor,
-		bottomRightColor,
-
-		topLeftRadius,
-		bottomLeftRadius,
-		topRightRadius,
-		bottomRightRadius
-	);
+    auto const bottomRightRadius = glm::vec2{bottomRightX, bottomRightY};
+    
+    auto const findResult = _activeState->_solidMap.find(hash);
+    if (findResult == _activeState->_solidMap.end())
+    {
+        bufferTracker = _solidFillRenderer->AllocateBuffer(
+            topLeftPos, bottomLeftPos, topRightPos, bottomRightPos,
+            topLeftColor, bottomLeftColor, topRightColor, bottomRightColor,
+            topLeftRadius, bottomLeftRadius,
+            topRightRadius, bottomRightRadius
+        );
+        _activeState->_solidMap[hash] = bufferTracker;
+    }
+    else
+    {
+        bufferTracker = findResult->second;
+        _solidFillRenderer->UpdateBuffer(
+            *bufferTracker,
+            topLeftPos, bottomLeftPos, topRightPos, bottomRightPos,
+            topLeftColor, bottomLeftColor, topRightColor, bottomRightColor,
+            topLeftRadius, bottomLeftRadius, topRightRadius, bottomRightRadius
+        );
+    }
 
 	_activeState->drawCalls.emplace_back([this, bufferTracker](RT::CommandRecordState &recordState) -> void
 	{
@@ -323,20 +415,32 @@ void WebViewContainer::draw_text(
 	const litehtml::position& pos
 )
 {
+    auto const hash = std::hash<litehtml::position>()(pos);
     auto & fontData = _fontList[hFont - 1];
-    // TODO: We can reuse the buffer instead. There is no need to destroy and recreate the buffer everytime.
-    std::shared_ptr textData = fontData.renderer->AllocateTextData();
 
-	FontRenderer::TextParams textParams{};
-	textParams.color = ConvertColor(color);
-	textParams.hTextAlign = FontRenderer::HorizontalTextAlign::Left;
+    auto const x = static_cast<float>(pos.x);
+    auto const y = static_cast<float>(pos.y);
+
+    FontRenderer::TextParams textParams{};
+    textParams.color = ConvertColor(color);
+    textParams.hTextAlign = FontRenderer::HorizontalTextAlign::Left;
     textParams.fontSizeInPixels = (float)fontData.size;
+
+    std::shared_ptr<FontRenderer::TextData> textData = nullptr;
+    auto const findResult = _activeState->_textMap.find(hash);
+    if (findResult == _activeState->_textMap.end())
+    {
+        textData = fontData.renderer->AllocateTextData();
+        _activeState->_textMap[hash] = textData;
+    }
+    else
+    {
+        textData = findResult->second;
+    }
+
+    fontData.renderer->ResetText(*textData);
+    fontData.renderer->AddText(*textData, text, x, y, textParams);
 	
-	auto const x = static_cast<float>(pos.x);
-	auto const y = static_cast<float>(pos.y);
-
-	fontData.renderer->AddText(*textData, text, x, y, textParams);
-
     _activeState->drawCalls.emplace_back([this, textData, &fontData](RT::CommandRecordState &recordState) -> void
 	{
 	    fontData.renderer->Draw(
@@ -459,33 +563,24 @@ int WebViewContainer::pt_to_px(int pt) const
     auto const windowWidth = static_cast<float>(device->GetWindowWidth());
     auto const windowHeight = static_cast<float>(device->GetWindowHeight());
 
-    float scaleFactorX = 1.0f;
-    float scaleFactorY = 1.0f;
-
     float bodyWidth = _bodyWidth;
     if (bodyWidth <= 0)
     {
         bodyWidth = windowWidth;
     }
-    float wScale = (float)windowWidth / bodyWidth;
-    scaleFactorX = wScale;
+    float const wScale = (float)windowWidth / bodyWidth;
 
     float bodyHeight = _bodyHeight;
     if (bodyHeight <= 0)
     {
         bodyHeight = windowHeight;
     }
-    float hScale = (float)windowHeight / bodyHeight;
-    scaleFactorY = hScale;
+    float const hScale = (float)windowHeight / bodyHeight;
 
-    float scaleFactor = std::min(scaleFactorX, scaleFactorY);
-     scaleFactor = std::max(scaleFactor, 1.0f);
+    float scaleFactor = std::min(wScale, hScale);
+    scaleFactor = std::max(scaleFactor, 1.0f);
 
-    // float halfWidth = windowWidth * 0.5f;
-    // float halfHeight = windowHeight * 0.5f;
-    // float scaleX = (1.0f / halfWidth) * scaleFactor;
-    // float scaleY = (1.0f / halfHeight) * scaleFactor;
-	return pt * scaleFactor;
+    return pt * scaleFactor;
 }
 
 //=========================================================================================
@@ -569,6 +664,40 @@ void WebViewContainer::SwitchActiveState()
 
 //=========================================================================================
 
+//size_t std::hash<litehtml::background_layer>::operator()(const litehtml::background_layer &layer) const
+//{
+//    auto const h1 = std::hash<int>()(layer.border_box.x);
+//    auto const h2 = std::hash<int>()(layer.border_box.y);
+//    auto const h3 = std::hash<int>()(layer.border_box.width);
+//    auto const h4 = std::hash<int>()(layer.border_box.height);
+//    auto const h5 = std::hash<int>()(layer.border_radius.bottom_left_x);
+//    auto const h6 = std::hash<int>()(layer.border_radius.bottom_left_y);
+//    auto const h7 = std::hash<int>()(layer.border_radius.bottom_right_x);
+//    auto const h8 = std::hash<int>()(layer.border_radius.bottom_right_y);
+//    auto const h9 = std::hash<int>()(layer.border_radius.top_left_x);
+//    auto const h10 = std::hash<int>()(layer.border_radius.top_left_y);
+//    auto const h11 = std::hash<int>()(layer.border_radius.top_right_x);
+//    auto const h12 = std::hash<int>()(layer.border_radius.top_right_y);
+//    auto const h13 = std::hash<int>()(layer.clip_box.x);
+//    auto const h14 = std::hash<int>()(layer.clip_box.y);
+//    auto const h15 = std::hash<int>()(layer.clip_box.width);
+//    auto const h16 = std::hash<int>()(layer.clip_box.height);
+//    auto const h17 = std::hash<int>()(layer.origin_box.x);
+//    auto const h18 = std::hash<int>()(layer.origin_box.y);
+//    auto const h19 = std::hash<int>()(layer.origin_box.width);
+//    auto const h20 = std::hash<int>()(layer.origin_box.height);
+//    auto const h21 = std::hash<int>()(layer.attachment);
+//    auto const h22 = std::hash<int>()(layer.repeat);
+//    auto const h23 = std::hash<bool>()(layer.is_root);
+//
+//    // Combine hashes
+//    return h1 ^ (h2 << 1) ^ (h3 << 2) ^ (h4 << 3) ^ (h5 << 4) ^ (h6 << 5) ^ (h7 << 6) ^ (h8 << 7) ^ (h9 << 8) ^
+//        (h10 << 9) ^ (h11 << 10) ^ (h12 << 11) ^ (h13 << 12) ^ (h14 << 13) ^ (h15 << 14) ^ (h16 << 15) ^ (h17 << 16) ^
+//        (h18 << 17) ^ (h19 << 18) ^ (h20 << 19) ^ (h21 << 20) ^ (h22 << 21) ^ (h23 << 22);
+//}
+
+//=========================================================================================
+
 litehtml::element::ptr WebViewContainer::GetElementById(char const * id) const
 {
 	return GetElementById(id, _html->root());
@@ -633,6 +762,7 @@ void WebViewContainer::InvalidateStyles(litehtml::element::ptr element)
 	element->compute_styles();
     // TODO: Try this
     //element->draw(0, 0, 0, &_clip, );
+    //element->draw(_activeIdx, 0, 0, &_clip, _html->root_render());
 	_isDirty = true;
 }
 
@@ -703,11 +833,15 @@ void WebViewContainer::OnResize(litehtml::position clip)
         glm::scale(glm::identity<glm::mat4>(), glm::vec3{scaleX, scaleY, 1.0f}) *
         glm::translate(glm::identity<glm::mat4>(), glm::vec3{-halfWidth, -halfHeight, 0.0f})
     );
+    
+    // It is not working as expected at the moment
+    _html->media_changed();
 
     _isDirty = true;
 
-    // It is not working as expected at the moment
-    _html->media_changed();
+    InvalidateStyles(_html->root());
+
+    //_html->render(_clip.width, litehtml::render_all);
 }
 
 //=========================================================================================
