@@ -9,7 +9,7 @@
           </text>
           <div class="center-row" style="justify-content: center; height: 100%;">
             <div class="center-column">
-              <div id="new-game" class="center-column button JetBrainsMono">
+              <div id="new-game" class="center-column button selected JetBrainsMono">
                 New game
               </div>
               <div class="spacer"></div>
@@ -31,12 +31,19 @@
             </div>
           </div>
           <div class="progress-container JetBrainsMono">
-            <div class="progress-bar" style="width: 70%;">70%</div>
+            <div class="progress-bar" style="width: 50%;">50%</div>
           </div>
           <div class="spacer"></div>
-          <div class="custom-checkbox-container" style="color: white; font-size: 4vmin;" onclick="toggleCheckbox(this)">
-            <div class="custom-checkbox checked"></div>
+          <div class="custom-checkbox-container selected" style="color: white; font-size: 4vmin;" onclick="toggleCheckbox(this)">
+            <div class="custom-checkbox checked"><img src="tick.png" class="check-image"></img></div>
             <span class="label-text">Check me</span>
+          </div>
+          <div class="spacer"></div>
+          <div class="slider-container">
+            <div class="slider-track">
+                <div class="slider-fill"></div>
+                <div class="slider-thumb"></div>
+            </div>
           </div>
         </div>
       </div>

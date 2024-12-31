@@ -172,6 +172,8 @@ litehtml::element::ptr WebViewContainer::create_element(
 	const std::shared_ptr<litehtml::document>& doc
 )
 {
+    // TODO: We can have custom elements like scene and game
+    //MFA_LOG_INFO("create_element: %s", tag_name);
 	return nullptr;
 }
 
@@ -223,6 +225,7 @@ void WebViewContainer::draw_borders(
 	bool root
 )
 {
+    MFA_LOG_INFO("draw_borders");
 	//_drawCalls.emplace_back([this, draw_pos, borders](RT::CommandRecordState& recordState)->void
 	//{
 	//	auto const windowWidth = static_cast<float>(LogicalDevice::Instance->GetWindowWidth());
@@ -251,7 +254,9 @@ void WebViewContainer::draw_conic_gradient(
 	const litehtml::background_layer& layer,
 	const litehtml::background_layer::conic_gradient& gradient
 )
-{}
+{
+    MFA_LOG_INFO("draw_conic_gradient");
+}
 
 //=========================================================================================
 
@@ -334,14 +339,14 @@ void WebViewContainer::draw_linear_gradient(
 	const litehtml::background_layer::linear_gradient& gradient
 )
 {
-
+    MFA_LOG_INFO("draw_linear_gradient");
 }
 
 //=========================================================================================
 
 void WebViewContainer::draw_list_marker(litehtml::uint_ptr hdc, const litehtml::list_marker& marker)
 {
-
+    MFA_LOG_INFO("draw_list_marker");
 }
 
 //=========================================================================================
@@ -352,7 +357,7 @@ void WebViewContainer::draw_radial_gradient(
 	const litehtml::background_layer::radial_gradient& gradient
 )
 {
-
+    MFA_LOG_INFO("draw_radial_gradient");
 }
 
 //=========================================================================================
@@ -649,7 +654,7 @@ int WebViewContainer::text_width(const char* text, litehtml::uint_ptr hFont)
 
 void WebViewContainer::transform_text(litehtml::string& text, litehtml::text_transform tt)
 {
-	
+    MFA_LOG_INFO("transform_text");
 }
 
 //=========================================================================================

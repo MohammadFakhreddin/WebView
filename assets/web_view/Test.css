@@ -34,8 +34,14 @@
     width: 30vmin;
     font-size: 5vmin;
 }
-.selected {
+.selected{
+    border: 0.5vmin dashed red;
+}
+.selected-del {
     background-color: rgb(172, 167, 214); 
+    transform: scale(1.05); /* Slight scaling for emphasis */
+    border-width: 1vmin;
+    border-color: red;
 }
 .spacer {
     padding: 1vmin;
@@ -43,8 +49,11 @@
 .progress-container {
     width: 80vmin; /* Outer bar width */
     background-color: #ddd;
-    border-radius: 3vmin;
+    border-radius: 4vmin;
     overflow: hidden;
+    display: flex;
+    align-items: center;
+    align-content: center;
     box-shadow: 0 0.5vmin 1vmin rgba(0, 0, 0, 0.1);
 }
 .progress-bar {
@@ -53,9 +62,12 @@
     color: white;
     text-align: center;
     line-height: 5vmin;
+    margin: 1vmin;
     font-size: 4vmin;
     border-top-left-radius: 3vmin;
     border-bottom-left-radius: 3vmin;
+    border-top-right-radius: 3vmin;
+    border-bottom-right-radius: 3vmin;
     transition: width 0.3s ease;
 }
 .custom-checkbox-container {
@@ -64,26 +76,34 @@
     cursor: pointer;
     font-size: 2vmin; /* Label text size */
 }
-
 .custom-checkbox {
     width: 4vmin; /* Checkbox size */
     height: 4vmin;
     background-color: #ddd;
     border-radius: 1vmin; /* Rounded corners */
-    margin-right: 2vmin; /* Space between checkbox and label */
+    margin-right: 1vmin; /* Space between checkbox and label */
     box-shadow: inset 0 0 0.5vmin rgba(0, 0, 0, 0.2);
     transition: background-color 0.3s ease;
 }
-
 .custom-checkbox.checked {
-    background-color: #4caf50; /* Checked state color */
     display: flex;
     justify-content: center;
     align-items: center;
 }
-
 .custom-checkbox.checked::before {
-    content: '✔'; /* Checkmark symbol */
     color: white;
     font-size: 3vmin;
+}
+.check-image
+{
+    display: none;
+    width:3vmin; 
+    height:3vmin
+}
+.check-image
+{
+    display: flex;
+    filter: grayscale(1) brightness(0) sepia(1) hue-rotate(120deg) saturate(10);
+    width:3vmin; 
+    height:3vmin
 }
