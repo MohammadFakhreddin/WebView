@@ -29,7 +29,7 @@
 .button {
     background-color: white; 
     padding: 1vmin;
-    padding-top: 2vmin; 
+    /* padding-top: 2vmin;  */
     border-radius: 7vmin;
     width: 30vmin;
     font-size: 5vmin;
@@ -39,4 +39,51 @@
 }
 .spacer {
     padding: 1vmin;
+}
+.progress-container {
+    width: 80vmin; /* Outer bar width */
+    background-color: #ddd;
+    border-radius: 3vmin;
+    overflow: hidden;
+    box-shadow: 0 0.5vmin 1vmin rgba(0, 0, 0, 0.1);
+}
+.progress-bar {
+    height: 5vmin; /* Height of the progress bar */
+    background-color: #4caf50;
+    color: white;
+    text-align: center;
+    line-height: 5vmin;
+    font-size: 4vmin;
+    border-top-left-radius: 3vmin;
+    border-bottom-left-radius: 3vmin;
+    transition: width 0.3s ease;
+}
+.custom-checkbox-container {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    font-size: 2vmin; /* Label text size */
+}
+
+.custom-checkbox {
+    width: 4vmin; /* Checkbox size */
+    height: 4vmin;
+    background-color: #ddd;
+    border-radius: 1vmin; /* Rounded corners */
+    margin-right: 2vmin; /* Space between checkbox and label */
+    box-shadow: inset 0 0 0.5vmin rgba(0, 0, 0, 0.2);
+    transition: background-color 0.3s ease;
+}
+
+.custom-checkbox.checked {
+    background-color: #4caf50; /* Checked state color */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.custom-checkbox.checked::before {
+    content: '✔'; /* Checkmark symbol */
+    color: white;
+    font-size: 3vmin;
 }

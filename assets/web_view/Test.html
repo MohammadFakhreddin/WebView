@@ -1,9 +1,9 @@
 <html>
   <link rel="stylesheet" href="Test.css">
-  <body width=800 height=600 style="background-color: rgb(34, 96, 144);" >
+  <body width=800 height=600 style="background-color: rgb(34, 96, 144);" class="JetBrainsMono" >
       <div style="width: 100%; height: 100%;" class="center-row">
         <div style="width: 100%; height: 100%;" class="center-column">
-          <div style="padding: 32px;"></div>
+          <!-- <div style="padding: 32px;"></div> -->
           <text style="color: white; font-size: 10vmin;" class="JetBrainsMono">
             Crazy tank game
           </text>
@@ -27,8 +27,16 @@
             </div>
             <div style="width: 4vmin;"></div>
             <div class="center-column">
-              <img src="tank.jpeg" style="width:40vmin; height:40vmin; border-radius: 32px;"/>
+              <img src="tank.jpeg" style="width:40vmin; height:40vmin; border-radius: 4vmin;"/>
             </div>
+          </div>
+          <div class="progress-container JetBrainsMono">
+            <div class="progress-bar" style="width: 70%;">70%</div>
+          </div>
+          <div class="spacer"></div>
+          <div class="custom-checkbox-container" style="color: white; font-size: 4vmin;" onclick="toggleCheckbox(this)">
+            <div class="custom-checkbox checked"></div>
+            <span class="label-text">Check me</span>
           </div>
         </div>
       </div>

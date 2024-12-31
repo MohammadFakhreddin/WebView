@@ -325,7 +325,7 @@ std::shared_ptr<CustomFontRenderer> WebViewApp::RequestFont(char const *font)
 
 //=============================================================
 
-std::shared_ptr<RT::GpuTexture> WebViewApp::RequestImage(char const *imageName)
+std::tuple<std::shared_ptr<RT::GpuTexture>, glm::vec2> WebViewApp::RequestImage(char const *imageName)
 {
     auto const findResult = _imageMap.find(imageName);
     if (findResult != _imageMap.end())
@@ -361,12 +361,16 @@ std::shared_ptr<RT::GpuTexture> WebViewApp::RequestImage(char const *imageName)
             commandBuffer
         );
 
-        _imageMap[imageName] = gpuTexture;
+        auto const & mipDim = cpuTexture->GetMipmap(0).dimension;
 
-        return gpuTexture;
+        auto const tuple = std::tuple{gpuTexture, glm::vec2{mipDim.width, mipDim.height}};
+        
+        _imageMap[imageName] = tuple;
+
+        return tuple;
     }
 
-    return nullptr;
+    return {};
 }
 
 //=============================================================

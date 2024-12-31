@@ -95,7 +95,6 @@ namespace MFA
 
         bool success = true;
 
-        float height = 0.0f;
         // Generate a uv mapped quad per char in the new text
         for (auto const letter : text)
         {
@@ -116,8 +115,6 @@ namespace MFA
 
                 float const charW = (float)pixelWidth * scale;
                 float const charH = (float)pixelHeight * scale;
-
-                height = std::max(height, charH);
 
                 float const x0Offset = (float)charData->xoff * scale;
                 float const y0Offset = (float)charData->yoff * scale;
@@ -167,7 +164,7 @@ namespace MFA
 
         for (int i = 0; i < itrCount; ++i)
         {
-            mapped[i].position.y += height;
+            mapped[i].position.y += _fontHeight * scale * 0.75f;
         }
 
         auto const width = TextWidth(text, params.fontSizeInPixels);

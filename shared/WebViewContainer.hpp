@@ -18,7 +18,7 @@ public:
     using ImageRenderer = MFA::ImageRenderer;
     using RequestBlob = std::function<std::shared_ptr<MFA::Blob>(char const * address, bool force)>;
     using RequestFont = std::function<std::shared_ptr<FontRenderer>(char const * font)>;
-    using RequestImage = std::function<std::shared_ptr<MFA::RT::GpuTexture>(char const * path)>;
+    using RequestImage = std::function<std::tuple<std::shared_ptr<MFA::RT::GpuTexture>, glm::vec2>(char const * path)>;
     
     struct Params
     {

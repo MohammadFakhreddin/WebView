@@ -264,7 +264,7 @@ void WebViewContainer::draw_image(
 {
     auto hash = std::hash<litehtml::background_layer>()(layer);
     auto const imagePath = Path::Get(url.c_str(), _parentAddress.c_str());
-    std::shared_ptr gpuTexture = _requestImage(imagePath.c_str());
+    auto [gpuTexture, _] = _requestImage(imagePath.c_str());
 
     auto const borderX = static_cast<float>(layer.border_box.x);
     auto const borderY = static_cast<float>(layer.border_box.y);
@@ -516,11 +516,9 @@ int WebViewContainer::get_default_font_size() const
 
 void WebViewContainer::get_image_size(const char* src, const char* baseurl, litehtml::size& sz)
 {
-    auto image = _requestImage(Path::Instance()->Get(src, _parentAddress.c_str()).c_str());
-    // TODO
-	//MFA_LOG_INFO("src: %s, baseurl: %s", src, baseurl);
-	// sz.width = 100;
-	// sz.height = 100;
+    auto [image, dim] = _requestImage(Path::Instance()->Get(src, _parentAddress.c_str()).c_str());
+     sz.width = dim.x;
+	 sz.height = dim.y;
 }
 
 //=========================================================================================
