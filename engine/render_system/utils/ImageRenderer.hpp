@@ -10,18 +10,12 @@ namespace MFA
     public:
 
         using Pipeline = ImagePipeline;
-
-        struct Extent
-        {
-            int x;
-            int y;
-            int width;
-            int height;
-        };
+        using Position = Pipeline::Position;
+		using UV = Pipeline::UV;
+		using Radius = Pipeline::Radius;
 
         struct ImageData
         {
-            Extent extent;
             std::optional<LocalBufferTracker> vertexData = std::nullopt;
             RT::DescriptorSetGroup descriptorSet;
         };
@@ -29,9 +23,35 @@ namespace MFA
         explicit ImageRenderer(std::shared_ptr<Pipeline> pipeline);
 
         [[nodiscard]]
-        std::unique_ptr<ImageData> AllocateImageData(RT::GpuTexture const & gpuTexture, Extent const & extent) const;
+        std::unique_ptr<ImageData> AllocateImageData(
+            RT::GpuTexture const & gpuTexture,
 
-        void UpdateImageData(ImageData &imageData, RT::GpuTexture const &gpuTexture, Extent const &extent) const;
+            Position const &topLeftPos,
+            Position const &bottomLeftPos,
+            Position const &topRightPos,
+            Position const &bottomRightPos,
+
+            Radius const &topLeftBorderRadius,
+            Radius const &bottomLeftBorderRadius,
+            Radius const &topRightBorderRadius,
+            Radius const &bottomRightBorderRadius
+        ) const;
+
+        void UpdateImageData(
+            ImageData &imageData,
+
+            RT::GpuTexture const &gpuTexture,
+
+            Position const &topLeftPos,
+            Position const &bottomLeftPos,
+            Position const &topRightPos,
+            Position const &bottomRightPos,
+
+            Radius const &topLeftBorderRadius,
+            Radius const &bottomLeftBorderRadius,
+            Radius const &topRightBorderRadius,
+            Radius const &bottomRightBorderRadius
+        ) const;
 
         void Draw(
             RT::CommandRecordState & recordState,

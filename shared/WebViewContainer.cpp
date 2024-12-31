@@ -265,23 +265,54 @@ void WebViewContainer::draw_image(
     auto hash = std::hash<litehtml::background_layer>()(layer);
     auto const imagePath = Path::Get(url.c_str(), _parentAddress.c_str());
     std::shared_ptr gpuTexture = _requestImage(imagePath.c_str());
-    auto const extent = ImageRenderer::Extent{
-        .x = layer.origin_box.x,
-        .y = layer.origin_box.y,
-        .width = layer.origin_box.width,
-        .height = layer.origin_box.height
-    };
+
+    auto const borderX = static_cast<float>(layer.border_box.x);
+    auto const borderY = static_cast<float>(layer.border_box.y);
+
+    auto const solidWidth = static_cast<float>(layer.border_box.width);
+    auto const solidHeight = static_cast<float>(layer.border_box.height);
+
+    glm::vec2 const topLeftPos{borderX, borderY};
+    auto const topLeftX = (float)layer.border_radius.top_left_x;
+    auto const topLeftY = (float)layer.border_radius.top_left_y;
+    auto const topLeftRadius = glm::vec2{topLeftX, topLeftY};
+
+    glm::vec2 const topRightPos = topLeftPos + glm::vec2{solidWidth, 0.0f};
+    auto const topRightX = (float)layer.border_radius.top_right_x;
+    auto const topRightY = (float)layer.border_radius.top_right_y;
+    auto const topRightRadius = glm::vec2{topRightX, topRightY};
+    ;
+
+    glm::vec2 const bottomLeftPos = topLeftPos + glm::vec2{0.0f, solidHeight};
+    auto const bottomLeftX = (float)layer.border_radius.bottom_left_x;
+    auto const bottomLeftY = (float)layer.border_radius.bottom_left_y;
+    auto const bottomLeftRadius = glm::vec2{bottomLeftX, bottomLeftY};
+
+    glm::vec2 const bottomRightPos = topLeftPos + glm::vec2{solidWidth, solidHeight};
+    auto const bottomRightX = (float)layer.border_radius.bottom_right_x;
+    auto const bottomRightY = (float)layer.border_radius.bottom_right_y;
+    auto const bottomRightRadius = glm::vec2{bottomRightX, bottomRightY};
+    
     std::shared_ptr<ImageRenderer::ImageData> imageData = nullptr;
-    auto const findResult = _activeState->_imageMap.find(hash);
-    if (findResult == _activeState->_imageMap.end())
+    auto const findResult = _activeState->imageMap.find(hash);
+    if (findResult == _activeState->imageMap.end())
     {
-        imageData = _imageRenderer->AllocateImageData(*gpuTexture, extent);
-        _activeState->_imageMap[hash] = imageData;
+        imageData = _imageRenderer->AllocateImageData(
+            *gpuTexture,
+            topLeftPos, bottomLeftPos, topRightPos, bottomRightPos,
+            topLeftRadius, bottomLeftRadius, topRightRadius, bottomRightRadius
+        );
+        _activeState->imageMap[hash] = imageData;
     }
     else
     {
         imageData = findResult->second;
-        _imageRenderer->UpdateImageData(*imageData, *gpuTexture, extent);
+        _imageRenderer->UpdateImageData(
+            *imageData,
+            *gpuTexture,
+            topLeftPos, bottomLeftPos, topRightPos, bottomRightPos,
+            topLeftRadius, bottomLeftRadius, topRightRadius, bottomRightRadius
+        );
     }
 
     _activeState->drawCalls.emplace_back([this, imageData](RT::CommandRecordState & recordState)->void
@@ -368,8 +399,8 @@ void WebViewContainer::draw_solid_fill(
     auto const bottomRightY = (float)layer.border_radius.bottom_right_y;
     auto const bottomRightRadius = glm::vec2{bottomRightX, bottomRightY};
     
-    auto const findResult = _activeState->_solidMap.find(hash);
-    if (findResult == _activeState->_solidMap.end())
+    auto const findResult = _activeState->solidMap.find(hash);
+    if (findResult == _activeState->solidMap.end())
     {
         bufferTracker = _solidFillRenderer->AllocateBuffer(
             topLeftPos, bottomLeftPos, topRightPos, bottomRightPos,
@@ -377,7 +408,7 @@ void WebViewContainer::draw_solid_fill(
             topLeftRadius, bottomLeftRadius,
             topRightRadius, bottomRightRadius
         );
-        _activeState->_solidMap[hash] = bufferTracker;
+        _activeState->solidMap[hash] = bufferTracker;
     }
     else
     {
@@ -427,11 +458,11 @@ void WebViewContainer::draw_text(
     textParams.fontSizeInPixels = (float)fontData.size;
 
     std::shared_ptr<FontRenderer::TextData> textData = nullptr;
-    auto const findResult = _activeState->_textMap.find(hash);
-    if (findResult == _activeState->_textMap.end())
+    auto const findResult = _activeState->textMap.find(hash);
+    if (findResult == _activeState->textMap.end())
     {
         textData = fontData.renderer->AllocateTextData();
-        _activeState->_textMap[hash] = textData;
+        _activeState->textMap[hash] = textData;
     }
     else
     {

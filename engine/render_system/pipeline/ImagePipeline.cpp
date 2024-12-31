@@ -64,19 +64,6 @@ RT::DescriptorSetGroup ImagePipeline::CreateDescriptorSet(RT::GpuTexture const &
         1
     );
 
-    //auto const& descriptorSet = descriptorSetGroup.descriptorSets[0];
-    //MFA_ASSERT(descriptorSet != VK_NULL_HANDLE);
-
-    //DescriptorSetSchema schema { descriptorSet };
-
-    //VkDescriptorImageInfo info {
-    //    .sampler = _sampler->sampler,
-    //    .imageView = texture.imageView->imageView,
-    //    .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-    //};
-    //schema.AddCombinedImageSampler(&info);
-
-    //schema.UpdateDescriptorSets();
     UpdateDescriptorSet(descriptorSetGroup, texture);
 
     return descriptorSetGroup;
@@ -192,11 +179,17 @@ void ImagePipeline::CreatePipeline()
 
     std::vector<RT::GpuShader const *> shaders{gpuVertexShader.get(), gpuFragmentShader.get()};
 
-    VkVertexInputBindingDescription const bindingDescription{
+	std::vector<VkVertexInputBindingDescription> const bindingDescriptions{
+    VkVertexInputBindingDescription{
         .binding = 0,
         .stride = sizeof(Vertex),
         .inputRate = VK_VERTEX_INPUT_RATE_VERTEX,
-    };
+    },
+    VkVertexInputBindingDescription{
+        .binding = 1,
+        .stride = sizeof(Instance),
+        .inputRate = VK_VERTEX_INPUT_RATE_INSTANCE,
+    }};
 
     std::vector<VkVertexInputAttributeDescription> inputAttributeDescriptions{};
     // Position
@@ -212,6 +205,66 @@ void ImagePipeline::CreatePipeline()
         .binding = 0,
         .format = VK_FORMAT_R32G32_SFLOAT,
         .offset = offsetof(Vertex, uv),
+    });
+    // topLeftPos
+    inputAttributeDescriptions.emplace_back(VkVertexInputAttributeDescription{
+        .location = static_cast<uint32_t>(inputAttributeDescriptions.size()),
+        .binding = 1,
+        .format = VK_FORMAT_R32G32_SFLOAT,
+        .offset = offsetof(Instance, topLeftPos)
+    });
+    // topLeftRadius
+    inputAttributeDescriptions.emplace_back(VkVertexInputAttributeDescription{
+        .location = static_cast<uint32_t>(inputAttributeDescriptions.size()),
+        .binding = 1,
+        .format = VK_FORMAT_R32G32_SFLOAT,
+        .offset = offsetof(Instance, topLeftRadius)
+    });
+
+    // bottomLeftPos
+    inputAttributeDescriptions.emplace_back(VkVertexInputAttributeDescription{
+        .location = static_cast<uint32_t>(inputAttributeDescriptions.size()),
+        .binding = 1,
+        .format = VK_FORMAT_R32G32_SFLOAT,
+        .offset = offsetof(Instance, bottomLeftPos)
+    });
+
+    // bottomLeftRadius
+    inputAttributeDescriptions.emplace_back(VkVertexInputAttributeDescription{
+        .location = static_cast<uint32_t>(inputAttributeDescriptions.size()),
+        .binding = 1,
+        .format = VK_FORMAT_R32G32_SFLOAT,
+        .offset = offsetof(Instance, bottomLeftRadius)
+    });
+
+    // topRightPos
+    inputAttributeDescriptions.emplace_back(VkVertexInputAttributeDescription{
+        .location = static_cast<uint32_t>(inputAttributeDescriptions.size()),
+        .binding = 1,
+        .format = VK_FORMAT_R32G32_SFLOAT,
+        .offset = offsetof(Instance, topRightPos)
+    });
+    // topRightRadius
+    inputAttributeDescriptions.emplace_back(VkVertexInputAttributeDescription{
+        .location = static_cast<uint32_t>(inputAttributeDescriptions.size()),
+        .binding = 1,
+        .format = VK_FORMAT_R32G32_SFLOAT,
+        .offset = offsetof(Instance, topRightRadius)
+    });
+
+    // bottomRightPos
+    inputAttributeDescriptions.emplace_back(VkVertexInputAttributeDescription{
+        .location = static_cast<uint32_t>(inputAttributeDescriptions.size()),
+        .binding = 1,
+        .format = VK_FORMAT_R32G32_SFLOAT,
+        .offset = offsetof(Instance, bottomRightPos)
+    });
+    // bottomRightRadius
+    inputAttributeDescriptions.emplace_back(VkVertexInputAttributeDescription{
+        .location = static_cast<uint32_t>(inputAttributeDescriptions.size()),
+        .binding = 1,
+        .format = VK_FORMAT_R32G32_SFLOAT,
+        .offset = offsetof(Instance, bottomRightRadius)
     });
 
     RB::CreateGraphicPipelineOptions pipelineOptions{};
@@ -239,7 +292,8 @@ void ImagePipeline::CreatePipeline()
 
     const auto pipelineLayout = RB::CreatePipelineLayout(
         LogicalDevice::Instance->GetVkDevice(),
-        setLayout.size(), setLayout.data(),
+        setLayout.size(),
+        setLayout.data(),
         pushConstantRanges.size(),
         pushConstantRanges.data()
     );
@@ -250,8 +304,8 @@ void ImagePipeline::CreatePipeline()
         LogicalDevice::Instance->GetVkDevice(),
         static_cast<uint8_t>(shaders.size()),
         shaders.data(),
-        1,
-        &bindingDescription,
+        bindingDescriptions.size(),
+        bindingDescriptions.data(),
         static_cast<uint8_t>(inputAttributeDescriptions.size()),
         inputAttributeDescriptions.data(),
         surfaceCapabilities.currentExtent,

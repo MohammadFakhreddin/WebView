@@ -59,8 +59,6 @@ Output main(Input input)
     output.screenPos = input.position.xy;
     output.color = input.color;
 
-    // float2 center = (input.topLeftPos + input.bottomLeftPos + input.topRightPos + input.bottomRightPos) * 0.25;
-
     // This is probably why they have separated radius into x and y component
     output.topLeftInnerPos = input.topLeftPos + float2(input.topLeftRadius.x, input.topLeftRadius.y);
     output.bottomLeftInnerPos = input.bottomLeftPos + float2(input.bottomLeftRadius.x, -input.bottomLeftRadius.y);

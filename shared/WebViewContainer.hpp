@@ -3,9 +3,9 @@
 #include "pipeline/SolidFillPipeline.hpp"
 #include "utils/CustomFontRenderer.hpp"
 #include "utils/SolidFillRenderer.hpp"
+#include "utils/ImageRenderer.hpp"
 
 #include "litehtml.h"
-#include "utils/ImageRenderer.hpp"
 
 // Idea: I can port this for unity
 class WebViewContainer : public litehtml::document_container
@@ -211,9 +211,9 @@ private:
     {
         std::vector<std::function<void(MFA::RT::CommandRecordState &)>> drawCalls{};
         std::vector<std::function<void(MFA::RT::CommandRecordState &)>> bufferCalls{};
-        std::unordered_map<size_t, std::shared_ptr<FontRenderer::TextData>> _textMap{};
-        std::unordered_map<size_t, std::shared_ptr<ImageRenderer::ImageData>> _imageMap{};
-        std::unordered_map<size_t, std::shared_ptr<MFA::LocalBufferTracker>> _solidMap{};
+        std::unordered_map<size_t, std::shared_ptr<FontRenderer::TextData>> textMap{};
+        std::unordered_map<size_t, std::shared_ptr<ImageRenderer::ImageData>> imageMap{};
+        std::unordered_map<size_t, std::shared_ptr<MFA::LocalBufferTracker>> solidMap{};
         int lifeTime{};
     };
     std::vector<State> _states{};

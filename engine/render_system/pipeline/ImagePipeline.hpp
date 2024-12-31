@@ -11,10 +11,34 @@ namespace MFA
     {
     public:
 
+        using Position = glm::vec2;
+        using Radius = glm::vec2;
+        using UV = glm::vec2;
+
         struct Vertex
         {
-            glm::vec2 position{};
-            glm::vec2 uv{};
+            Position position{};
+            Radius radius{};
+            UV uv{};
+        };
+
+        struct Instance
+        {
+            Position topLeftPos{};
+            Radius topLeftRadius{};
+            UV topLeftUV{};
+            
+            Position bottomLeftPos{};
+            Radius bottomLeftRadius{};
+            UV bottomLeftUV{};
+            
+            Position topRightPos{};
+            Radius topRightRadius{};
+            UV topRightUV{};
+            
+            Position bottomRightPos{};
+            Radius bottomRightRadius{};
+            UV bottomRightUV{};
         };
 
         struct PushConstants
