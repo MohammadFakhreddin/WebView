@@ -96,6 +96,14 @@ namespace MFA
     }
 
     //------------------------------------------------------------------------------------------------------------------
+
+    void ImageRenderer::FreeImageData(ImageData &imageData)
+    {
+        imageData.vertexData.reset();
+        _pipeline->FreeDescriptorSet(imageData.descriptorSet);
+    }
+
+    //------------------------------------------------------------------------------------------------------------------
     // TODO: I need to use viewport and scissor to render within area.
     void ImageRenderer::Draw(
         RT::CommandRecordState & recordState,

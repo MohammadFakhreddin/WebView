@@ -16,7 +16,7 @@ ImagePipeline::ImagePipeline(
     : _displayRenderPass(std::move(displayRenderPass))
     , _sampler(std::move(sampler))
 {
-    _descriptorPool = RB::CreateDescriptorPool(LogicalDevice::Instance->GetVkDevice(), 1000);
+    _descriptorPool = RB::CreateDescriptorPool(LogicalDevice::Instance->GetVkDevice(), 1000, VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT);
     CreateDescriptorLayout();
     CreatePipeline();
 }

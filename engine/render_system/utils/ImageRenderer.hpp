@@ -53,11 +53,15 @@ namespace MFA
             Radius const &bottomRightBorderRadius
         ) const;
 
+        void FreeImageData(ImageData &imageData);
+
         void Draw(
             RT::CommandRecordState & recordState,
             Pipeline::PushConstants const & pushConstants,
             ImageData const & imageData
         ) const;
+
+    private:
 
         std::shared_ptr<Pipeline> _pipeline;
 

@@ -132,6 +132,50 @@ void WebViewContainer::Update()
         {
             state.lifeTime -= 1;
         }
+
+        std::vector<size_t> invalidKeys {};
+        for (auto & [key, value] : state.imageMap)
+        {
+            // It is not being used anywhere
+            if (value.use_count() == 1)
+            {
+                _imageRenderer->FreeImageData(*value);
+                invalidKeys.emplace_back(key);
+            }
+        }
+        for (auto const & key : invalidKeys)
+        {
+            state.imageMap.erase(key);
+        }
+        invalidKeys.clear();
+
+        for (auto & [key, value] : state.textMap)
+        {
+            // It is not being used anywhere
+            if (value.use_count() == 1)
+            {
+                invalidKeys.emplace_back(key);
+            }
+        }
+        for (auto const & key : invalidKeys)
+        {
+            state.imageMap.erase(key);
+        }
+        invalidKeys.clear();
+
+        for (auto & [key, value] : state.solidMap)
+        {
+            // It is not being used anywhere
+            if (value.use_count() == 1)
+            {
+                invalidKeys.emplace_back(key);
+            }
+        }
+        for (auto const & key : invalidKeys)
+        {
+            state.solidMap.erase(key);
+        }
+        invalidKeys.clear();
     }
     if (_isDirty == true)
     {
@@ -318,6 +362,7 @@ void WebViewContainer::draw_image(
             topLeftPos, bottomLeftPos, topRightPos, bottomRightPos,
             topLeftRadius, bottomLeftRadius, topRightRadius, bottomRightRadius
         );
+        
     }
 
     _activeState->drawCalls.emplace_back([this, imageData](RT::CommandRecordState & recordState)->void
