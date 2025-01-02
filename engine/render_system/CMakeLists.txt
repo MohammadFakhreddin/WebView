@@ -35,6 +35,8 @@ list(
     "${CMAKE_CURRENT_SOURCE_DIR}/pipeline/SolidFillPipeline.hpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/pipeline/ImagePipeline.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/pipeline/ImagePipeline.hpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pipeline/BorderPipeline.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/pipeline/BorderPipeline.hpp"
     
     "${CMAKE_CURRENT_SOURCE_DIR}/camera/PerspectiveCamera.hpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/camera/PerspectiveCamera.cpp"
@@ -51,6 +53,8 @@ list(
     "${CMAKE_CURRENT_SOURCE_DIR}/utils/SolidFillRenderer.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/utils/ImageRenderer.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/utils/ImageRenderer.hpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/utils/BorderRenderer.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/utils/BorderRenderer.hpp"
 )
 
 set(LIBRARY_NAME "RenderSystem")

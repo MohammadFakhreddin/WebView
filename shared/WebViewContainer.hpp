@@ -4,6 +4,7 @@
 #include "utils/CustomFontRenderer.hpp"
 #include "utils/SolidFillRenderer.hpp"
 #include "utils/ImageRenderer.hpp"
+#include "utils/BorderRenderer.hpp"
 
 #include "litehtml.h"
 
@@ -17,6 +18,7 @@ public:
 	using FontRenderer = MFA::CustomFontRenderer;
 	using SolidFillRenderer = MFA::SolidFillRenderer;
     using ImageRenderer = MFA::ImageRenderer;
+    using BorderRenderer = MFA::BorderRenderer;
     using RequestBlob = std::function<std::shared_ptr<MFA::Blob>(char const * address, bool force)>;
     using RequestFont = std::function<std::shared_ptr<FontRenderer>(char const * font)>;
     using RequestImage = std::function<std::tuple<std::shared_ptr<MFA::RT::GpuTexture>, glm::vec2>(char const * path)>;
@@ -25,6 +27,7 @@ public:
     {
         std::shared_ptr<SolidFillRenderer> solidFillRenderer{};
         std::shared_ptr<ImageRenderer> imageRenderer{};
+        std::shared_ptr<BorderRenderer> borderRenderer{};
         RequestBlob requestBlob;
         RequestFont requestFont;
         RequestImage requestImage;
@@ -183,6 +186,7 @@ private:
     std::string _htmlAddress{};
     std::shared_ptr<SolidFillRenderer> _solidFillRenderer = nullptr;
     std::shared_ptr<ImageRenderer> _imageRenderer = nullptr;
+    std::shared_ptr<BorderRenderer> _borderRenderer = nullptr;
     RequestBlob _requestBlob{};
     RequestFont _requestFont{};
     RequestImage _requestImage{};
@@ -208,13 +212,17 @@ private:
 
 	bool _isDirty = true;
 
+    template<typename Value>
+    using StateMap = std::unordered_map<size_t, std::shared_ptr<Value>>;
+
     struct State
     {
         std::vector<std::function<void(MFA::RT::CommandRecordState &)>> drawCalls{};
         std::vector<std::function<void(MFA::RT::CommandRecordState &)>> bufferCalls{};
-        std::unordered_map<size_t, std::shared_ptr<FontRenderer::TextData>> textMap{};
-        std::unordered_map<size_t, std::shared_ptr<ImageRenderer::ImageData>> imageMap{};
-        std::unordered_map<size_t, std::shared_ptr<MFA::LocalBufferTracker>> solidMap{};
+        StateMap<FontRenderer::TextData> textMap{};
+        StateMap<ImageRenderer::ImageData> imageMap{};
+        StateMap<MFA::LocalBufferTracker> solidMap{};
+        StateMap<MFA::LocalBufferTracker> borderMap{};
         int lifeTime{};
     };
     std::vector<State> _states{};

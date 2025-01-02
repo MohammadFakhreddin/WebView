@@ -103,6 +103,7 @@ WebViewContainer::WebViewContainer(
     , _htmlAddress(htmlAddress)
 	, _solidFillRenderer(std::move(params.solidFillRenderer))
     , _imageRenderer(std::move(params.imageRenderer))
+    , _borderRenderer(std::move(params.borderRenderer))
 	, _requestBlob(std::move(params.requestBlob))
     , _requestFont(std::move(params.requestFont))
     , _requestImage(std::move(params.requestImage))
@@ -174,6 +175,20 @@ void WebViewContainer::Update()
         for (auto const & key : invalidKeys)
         {
             state.solidMap.erase(key);
+        }
+        invalidKeys.clear();
+
+        for (auto & [key, value] : state.borderMap)
+        {
+            // It is not being used anywhere
+            if (value.use_count() == 1)
+            {
+                invalidKeys.emplace_back(key);
+            }
+        }
+        for (auto const & key : invalidKeys)
+        {
+            state.borderMap.erase(key);
         }
         invalidKeys.clear();
     }
@@ -269,26 +284,107 @@ void WebViewContainer::draw_borders(
 	bool root
 )
 {
-    MFA_LOG_INFO("draw_borders");
-	//_drawCalls.emplace_back([this, draw_pos, borders](RT::CommandRecordState& recordState)->void
-	//{
-	//	auto const windowWidth = static_cast<float>(LogicalDevice::Instance->GetWindowWidth());
-	//	auto const windowHeight = static_cast<float>(LogicalDevice::Instance->GetWindowHeight());
+    std::shared_ptr<LocalBufferTracker> bufferTracker = nullptr;
+    
+    auto hash = std::hash<litehtml::position>()(draw_pos);
+    
+    auto const x = static_cast<float>(draw_pos.x);
+    auto const y = static_cast<float>(draw_pos.y);
+    auto const width = static_cast<float>(draw_pos.width);
+    auto const height = static_cast<float>(draw_pos.height);
 
-	//	glm::vec3 topLeft {
-	//		static_cast<float>(draw_pos.x) / windowWidth,
-	//		static_cast<float>(draw_pos.y) / windowHeight,
-	//		0.0f
-	//	};
-	//	glm::vec3 bottomRight = topLeft + glm::vec3 {windowWidth, windowHeight, 0.0f};
-	//	glm::vec3 topRight = topLeft + glm::vec3{ windowWidth, 0.0f, 0.0f };
-	//	glm::vec3 bottomLeft = topLeft + glm::vec3{ 0.0f, windowHeight, 0.0f };
+    glm::vec2 const topLeftPos{x, y};
+    glm::vec2 const bottomLeftPos = topLeftPos + glm::vec2{0.0f, height};
+    glm::vec2 const topRightPos = topLeftPos + glm::vec2{width, 0.0f};
+    glm::vec2 const bottomRightPos = topLeftPos + glm::vec2{width, height};
 
-	//	_lineRenderer->Draw(recordState, topLeft, topRight, glm::vec4{ ConvertColor(borders.top.color) , 1.0f });
-	//	_lineRenderer->Draw(recordState, topLeft, bottomLeft, glm::vec4{ ConvertColor(borders.left.color) , 1.0f });
-	//	_lineRenderer->Draw(recordState, bottomLeft, bottomRight, glm::vec4{ ConvertColor(borders.bottom.color) , 1.0f });
-	//	_lineRenderer->Draw(recordState, topRight, bottomRight, glm::vec4{ ConvertColor(borders.right.color) , 1.0f});
-	//});
+    glm::vec4 const topColor = ConvertColor(borders.top.color);
+    glm::vec4 const bottomColor = ConvertColor(borders.bottom.color);
+    glm::vec4 const rightColor = ConvertColor(borders.right.color);
+    glm::vec4 const leftColor = ConvertColor(borders.left.color);
+    // Note: This is not 100% correct, but it works for now.
+    glm::vec4 topLeftColor = glm::mix(topColor, leftColor, 0.5f);
+    glm::vec4 bottomLeftColor = glm::mix(bottomColor, leftColor, 0.5f);
+    glm::vec4 topRightColor = glm::mix(topColor, rightColor, 0.5f);
+    glm::vec4 bottomRightColor = glm::mix(bottomColor, rightColor, 0.5f);
+
+    auto const topLeftRadius = glm::vec2{borders.radius.top_left_x, borders.radius.top_left_y};
+    auto const bottomLeftRadius = glm::vec2{borders.radius.bottom_left_x, borders.radius.bottom_left_y};
+    auto const topRightRadius = glm::vec2{borders.radius.top_right_x, borders.radius.top_right_y};
+    auto const bottomRightRadius = glm::vec2{borders.radius.bottom_right_x, borders.radius.bottom_right_y};
+
+    float leftWidth = borders.left.width;
+    float topWidth = borders.top.width;
+    float rightWidth = borders.right.width;
+    float bottomWidth = borders.bottom.width;
+
+    auto const findResult = _activeState->borderMap.find(hash);
+    if (findResult == _activeState->borderMap.end())
+    {
+        bufferTracker = _borderRenderer->AllocateBuffer(
+            topLeftPos,
+            bottomLeftPos,
+            topRightPos,
+            bottomRightPos,
+
+            topLeftColor,
+            bottomLeftColor,
+            topRightColor,
+            bottomRightColor,
+
+            topLeftRadius,
+            bottomLeftRadius,
+            topRightRadius,
+            bottomRightRadius,
+
+            leftWidth,
+            topWidth,
+            rightWidth,
+            bottomWidth
+        );
+        _activeState->borderMap[hash] = bufferTracker;
+    }
+    else
+    {
+        bufferTracker = findResult->second;
+        _borderRenderer->UpdateBuffer(
+            *bufferTracker,
+
+            topLeftPos,
+            bottomLeftPos,
+            topRightPos,
+            bottomRightPos,
+
+            topLeftColor,
+            bottomLeftColor,
+            topRightColor,
+            bottomRightColor,
+
+            topLeftRadius,
+            bottomLeftRadius,
+            topRightRadius,
+            bottomRightRadius,
+
+            leftWidth,
+            topWidth,
+            rightWidth,
+            bottomWidth
+        );
+    }
+
+	_activeState->drawCalls.emplace_back([this, bufferTracker](RT::CommandRecordState &recordState) -> void
+	{
+	    _borderRenderer->Draw(
+            recordState,
+            BorderPipeline::PushConstants{.model = _modelMat},
+            *bufferTracker
+        );
+	});
+
+    _activeState->bufferCalls.emplace_back([this, bufferTracker](RT::CommandRecordState &recordState) -> void
+    {
+        bufferTracker->Update(recordState);
+    });
 }
 
 //=========================================================================================
@@ -421,7 +517,6 @@ void WebViewContainer::draw_solid_fill(
     auto const borderY = static_cast<float>(layer.border_box.y);
 
     auto const solidWidth = static_cast<float>(layer.border_box.width);
-    ;
     auto const solidHeight = static_cast<float>(layer.border_box.height);
 
     glm::vec2 const topLeftPos{borderX, borderY};
@@ -435,7 +530,6 @@ void WebViewContainer::draw_solid_fill(
     auto const topRightX = (float)layer.border_radius.top_right_x;
     auto const topRightY = (float)layer.border_radius.top_right_y;
     auto const topRightRadius = glm::vec2{topRightX, topRightY};
-    ;
 
     glm::vec2 const bottomLeftPos = topLeftPos + glm::vec2{0.0f, solidHeight};
     auto const bottomLeftColor = topLeftColor;
@@ -837,6 +931,8 @@ litehtml::element::ptr WebViewContainer::GetElementByTag(char const * tag, liteh
 
 void WebViewContainer::InvalidateStyles(litehtml::element::ptr element)
 {
+    // _html->root()->apply_stylesheet(_html->m_styles);
+    // _html->root()->compute_styles();
 	element->apply_stylesheet(_html->m_styles);
 	element->compute_styles();
     // TODO: Try this

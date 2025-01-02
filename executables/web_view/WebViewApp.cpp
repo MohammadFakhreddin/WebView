@@ -67,6 +67,11 @@ void WebViewApp::Run()
         _solidFillRenderer = std::make_shared<SolidFillRenderer>(solidFillPipeline);
     }
 
+    {// Border
+        auto const borderPipeline = std::make_shared<BorderPipeline>(_displayRenderPass);
+        _borderRenderer = std::make_shared<BorderRenderer>(borderPipeline);
+    }
+
     {// Image
         auto const imageSampler = RB::CreateSampler(device->GetVkDevice(), {});
         auto const imagePipeline = std::make_shared<ImagePipeline>(_displayRenderPass, imageSampler);
@@ -221,6 +226,7 @@ void WebViewApp::InstantiateWebViewContainer()
     {
         .solidFillRenderer = _solidFillRenderer,
         .imageRenderer = _imageRenderer,
+        .borderRenderer = _borderRenderer,
         .requestBlob = [this](char const *address, bool force) { return RequestBlob(address, force); },
         .requestFont = [this](char const * font) { return RequestFont(font); },
         .requestImage = [this](char const * image) {return RequestImage(image);}
@@ -248,7 +254,7 @@ void WebViewApp::QueryButtons()
 
 void WebViewApp::SetSelectedButton(int const idx)
 {
-    static constexpr char const * SelectedKeyword = " selected";
+    static constexpr char const * SelectedKeyword = "selected";
     static const size_t SelectedKeywordSize = strlen(SelectedKeyword);
     _selectedButtonIdx = (idx + _buttons.size()) % _buttons.size();
     for (int i = 0; i < _buttons.size(); ++i)
@@ -257,6 +263,10 @@ void WebViewApp::SetSelectedButton(int const idx)
         std::string classAttr = button->get_attr("class");
         if (i == _selectedButtonIdx)
         {
+            if (classAttr.ends_with(" ") == false)
+            {
+                classAttr += " ";
+            }
             classAttr = classAttr.append(SelectedKeyword);
         }
         else

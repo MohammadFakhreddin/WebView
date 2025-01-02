@@ -11,7 +11,7 @@ MFA::SolidFillRenderer::SolidFillRenderer(std::shared_ptr<SolidFillPipeline> pip
 
 //------------------------------------------------------------------
 
-std::shared_ptr<MFA::LocalBufferTracker> MFA::SolidFillRenderer::AllocateBuffer(
+std::unique_ptr<MFA::LocalBufferTracker> MFA::SolidFillRenderer::AllocateBuffer(
 	Position const& topLeftPos,
 	Position const& bottomLeftPos,
 	Position const& topRightPos,
@@ -66,7 +66,7 @@ std::shared_ptr<MFA::LocalBufferTracker> MFA::SolidFillRenderer::AllocateBuffer(
 		bufferCount
 	);
 
-	auto bufferTracker = std::make_shared<LocalBufferTracker>(vertexBuffer, stageBuffer);
+	auto bufferTracker = std::make_unique<LocalBufferTracker>(vertexBuffer, stageBuffer);
 	bufferTracker->SetData(Alias(data));
 
 	return bufferTracker;

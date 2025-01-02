@@ -16,7 +16,7 @@ namespace MFA
 
 		explicit SolidFillRenderer(std::shared_ptr<Pipeline> pipeline);
 
-		static std::shared_ptr<LocalBufferTracker> AllocateBuffer(
+		static std::unique_ptr<LocalBufferTracker> AllocateBuffer(
 			Position const & topLeftPos,
 			Position const & bottomLeftPos,
 			Position const & topRightPos,

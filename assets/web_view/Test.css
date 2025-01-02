@@ -36,6 +36,7 @@
 }
 .selected{
     border: 0.5vmin dashed red;
+    background-color: blue;
 }
 .selected-del {
     background-color: rgb(172, 167, 214); 

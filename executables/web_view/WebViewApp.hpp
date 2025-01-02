@@ -45,8 +45,9 @@ private:
 	std::unique_ptr<WebViewContainer> _webViewContainer;
 
 	std::shared_ptr<MFA::SolidFillRenderer> _solidFillRenderer;
+    std::shared_ptr<MFA::BorderRenderer> _borderRenderer;
     std::shared_ptr<MFA::ImageRenderer> _imageRenderer;
-    std::shared_ptr<MFA::TextOverlayPipeline> _fontPipeline{};
+    std::shared_ptr<MFA::TextOverlayPipeline> _fontPipeline;
 
 	std::vector<litehtml::element::ptr> _buttons{};
 	int _selectedButtonIdx = 0;
