@@ -30,21 +30,19 @@
               <img src="tank.jpeg" style="width:40vmin; height:40vmin; border-radius: 4vmin;"/>
             </div>
           </div>
-          <div class="progress-container JetBrainsMono">
-            <div class="progress-bar" style="width: 50%;">50%</div>
-          </div>
-          <div class="spacer"></div>
-          <div class="custom-checkbox-container selected" style="color: white; font-size: 4vmin;" onclick="toggleCheckbox(this)">
-            <div class="custom-checkbox checked"><img src="tick.png" class="check-image"></img></div>
-            <span class="label-text">Check me</span>
-          </div>
-          <div class="spacer"></div>
-          <div class="slider-container">
-            <div class="slider-track">
-                <div class="slider-fill"></div>
-                <div class="slider-thumb"></div>
+          <div id="slider" class="" style="padding: 1vmin; display: flex; align-items: center; align-content: center; justify-content: center;">
+            <div class="progress-container JetBrainsMono">
+              <div id="slider-value" class="progress-bar" style="width: 50%;">50%</div>
             </div>
           </div>
+          <div class="spacer"></div>
+          <div id="checkbox" class="" style="padding: 1vmin; display: flex; align-items: center; align-content: center; justify-content: center;">
+            <div class="custom-checkbox-container" style="color: white; font-size: 4vmin;" onclick="toggleCheckbox(this)">
+              <div class="custom-checkbox checked"><img src="tick.png" class="check-image"></img></div>
+              <span class="label-text">Check me</span>
+            </div>
+          </div>
+          <div class="spacer"></div>
         </div>
       </div>
   </body>

@@ -65,7 +65,11 @@ public:
     void OnReload(litehtml::position clip);
 
     void OnResize(litehtml::position clip);
-	
+
+    void AddClass(litehtml::element::ptr element, char const *keyword);
+
+    void RemoveClass(litehtml::element::ptr element, char const *keyword);
+
 protected:
 
 	litehtml::element::ptr create_element(
@@ -211,6 +215,7 @@ private:
     glm::mat4 _modelMat{};
 
 	bool _isDirty = true;
+    bool _freeData = false;
 
     template<typename Value>
     using StateMap = std::unordered_map<size_t, std::shared_ptr<Value>>;

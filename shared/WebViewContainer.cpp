@@ -116,7 +116,7 @@ WebViewContainer::WebViewContainer(
     MFA_ASSERT(_requestFont != nullptr);
     MFA_ASSERT(_requestImage != nullptr);
 
-    OnReload(std::move(clip));
+    OnReload(clip);
 }
 
 //=========================================================================================
@@ -134,64 +134,69 @@ void WebViewContainer::Update()
             state.lifeTime -= 1;
         }
 
-        std::vector<size_t> invalidKeys {};
-        for (auto & [key, value] : state.imageMap)
+        if (_freeData == true)
         {
-            // It is not being used anywhere
-            if (value.use_count() == 1)
+            std::vector<size_t> invalidKeys{};
+            for (auto &[key, value] : state.imageMap)
             {
-                _imageRenderer->FreeImageData(*value);
-                invalidKeys.emplace_back(key);
+                // It is not being used anywhere
+                if (value.use_count() == 1)
+                {
+                    _imageRenderer->FreeImageData(*value);
+                    invalidKeys.emplace_back(key);
+                }
             }
-        }
-        for (auto const & key : invalidKeys)
-        {
-            state.imageMap.erase(key);
-        }
-        invalidKeys.clear();
+            for (auto const &key : invalidKeys)
+            {
+                state.imageMap.erase(key);
+            }
+            invalidKeys.clear();
 
-        for (auto & [key, value] : state.textMap)
-        {
-            // It is not being used anywhere
-            if (value.use_count() == 1)
+            for (auto &[key, value] : state.textMap)
             {
-                invalidKeys.emplace_back(key);
+                // It is not being used anywhere
+                if (value.use_count() == 1)
+                {
+                    invalidKeys.emplace_back(key);
+                }
             }
-        }
-        for (auto const & key : invalidKeys)
-        {
-            state.imageMap.erase(key);
-        }
-        invalidKeys.clear();
+            for (auto const &key : invalidKeys)
+            {
+                state.imageMap.erase(key);
+            }
+            invalidKeys.clear();
 
-        for (auto & [key, value] : state.solidMap)
-        {
-            // It is not being used anywhere
-            if (value.use_count() == 1)
+            for (auto &[key, value] : state.solidMap)
             {
-                invalidKeys.emplace_back(key);
+                // It is not being used anywhere
+                if (value.use_count() == 1)
+                {
+                    invalidKeys.emplace_back(key);
+                }
             }
-        }
-        for (auto const & key : invalidKeys)
-        {
-            state.solidMap.erase(key);
-        }
-        invalidKeys.clear();
+            for (auto const &key : invalidKeys)
+            {
+                state.solidMap.erase(key);
+            }
+            invalidKeys.clear();
 
-        for (auto & [key, value] : state.borderMap)
-        {
-            // It is not being used anywhere
-            if (value.use_count() == 1)
+            for (auto &[key, value] : state.borderMap)
             {
-                invalidKeys.emplace_back(key);
+                // It is not being used anywhere
+                if (value.use_count() == 1)
+                {
+                    invalidKeys.emplace_back(key);
+                }
             }
+            for (auto const &key : invalidKeys)
+            {
+                state.borderMap.erase(key);
+            }
+            invalidKeys.clear();
         }
-        for (auto const & key : invalidKeys)
-        {
-            state.borderMap.erase(key);
-        }
-        invalidKeys.clear();
     }
+    _freeData = false;
+
     if (_isDirty == true)
     {
         //SCOPE_Profiler("Invalidate took");
@@ -231,6 +236,7 @@ litehtml::element::ptr WebViewContainer::create_element(
 	const std::shared_ptr<litehtml::document>& doc
 )
 {
+    // TODO: Ideas: Include other html files with a custom tag
     // TODO: We can have custom elements like scene and game
     //MFA_LOG_INFO("create_element: %s", tag_name);
 	return nullptr;
@@ -605,7 +611,7 @@ void WebViewContainer::draw_text(
     auto const findResult = _activeState->textMap.find(hash);
     if (findResult == _activeState->textMap.end())
     {
-        textData = fontData.renderer->AllocateTextData();
+        textData = fontData.renderer->AllocateTextData(32);
         _activeState->textMap[hash] = textData;
     }
     else
@@ -931,21 +937,16 @@ litehtml::element::ptr WebViewContainer::GetElementByTag(char const * tag, liteh
 
 void WebViewContainer::InvalidateStyles(litehtml::element::ptr element)
 {
-    // _html->root()->apply_stylesheet(_html->m_styles);
-    // _html->root()->compute_styles();
-	element->apply_stylesheet(_html->m_styles);
+    element->apply_stylesheet(_html->m_styles);
 	element->compute_styles();
-    // TODO: Try this
-    //element->draw(0, 0, 0, &_clip, );
-    //element->draw(_activeIdx, 0, 0, &_clip, _html->root_render());
-	_isDirty = true;
+    _isDirty = true;
 }
 
 //=========================================================================================
 
 void WebViewContainer::OnReload(litehtml::position clip)
 {
-    _htmlBlob = File::Read(_htmlAddress);
+    _htmlBlob = _requestBlob(_htmlAddress.c_str(), true);
     char const *htmlText = _htmlBlob->As<char const>();
     _html = litehtml::document::createFromString(htmlText, this);
 
@@ -1016,7 +1017,55 @@ void WebViewContainer::OnResize(litehtml::position clip)
 
     InvalidateStyles(_html->root());
 
+    _freeData = true;
+
     //_html->render(_clip.width, litehtml::render_all);
+}
+
+//=========================================================================================
+
+void WebViewContainer::AddClass(litehtml::element::ptr element, char const *keyword)
+{
+    char charBufer[1024]{};
+    sprintf(charBufer, "\\b%s\\b", keyword);
+    std::regex wordRegex(charBufer);
+
+    std::string classAttr = element->get_attr("class", "");
+    {
+        std::smatch match;
+        auto const findResult = std::regex_search(classAttr, match, wordRegex);
+        if (findResult == false)
+        {
+            if (classAttr.ends_with(" ") == false)
+            {
+                classAttr += " ";
+            }
+            classAttr = classAttr.append(keyword);
+        }
+    }
+    element->set_attr("class", classAttr.c_str());
+    InvalidateStyles(element);
+}
+
+//=========================================================================================
+
+void WebViewContainer::RemoveClass(litehtml::element::ptr element, char const *keyword)
+{
+    const size_t keywordSize = strlen(keyword);
+    char charBufer[1024]{};
+    sprintf(charBufer, "\\b%s\\b", keyword);
+    std::regex wordRegex(charBufer);
+    std::string classAttr = element->get_attr("class", "");
+
+    std::smatch match;
+    auto const findResult = std::regex_search(classAttr, match, wordRegex);
+    if (findResult == true)
+    {
+        classAttr.erase(match.position(), keywordSize);
+    }
+
+    element->set_attr("class", classAttr.c_str());
+    InvalidateStyles(element);
 }
 
 //=========================================================================================

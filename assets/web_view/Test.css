@@ -29,14 +29,17 @@
 .button {
     background-color: white; 
     padding: 1vmin;
-    /* padding-top: 2vmin;  */
     border-radius: 7vmin;
     width: 30vmin;
     font-size: 5vmin;
+    border: 0.5vmin solid transparent;
 }
 .selected{
-    border: 0.5vmin dashed red;
-    background-color: blue;
+    border: 0.5vmin solid red;
+    /* background-color: blue; */
+}
+.unselected{
+    border: 0.5vmin solid transparent;
 }
 .selected-del {
     background-color: rgb(172, 167, 214); 
@@ -55,6 +58,7 @@
     display: flex;
     align-items: center;
     align-content: center;
+    border: 0 solid transparent;
     box-shadow: 0 0.5vmin 1vmin rgba(0, 0, 0, 0.1);
 }
 .progress-bar {
@@ -76,6 +80,7 @@
     align-items: center;
     cursor: pointer;
     font-size: 2vmin; /* Label text size */
+    border: 0 dashed transparent;
 }
 .custom-checkbox {
     width: 4vmin; /* Checkbox size */
@@ -94,12 +99,6 @@
 .custom-checkbox.checked::before {
     color: white;
     font-size: 3vmin;
-}
-.check-image
-{
-    display: none;
-    width:3vmin; 
-    height:3vmin
 }
 .check-image
 {

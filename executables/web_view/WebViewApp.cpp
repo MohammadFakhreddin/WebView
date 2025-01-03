@@ -6,6 +6,7 @@
 #include "LogicalDevice.hpp"
 #include "Time.hpp"
 #include "WebViewContainer.hpp"
+#include "litehtml/el_text.h"
 
 
 using namespace MFA;
@@ -32,35 +33,7 @@ void WebViewApp::Run()
         Resize();
     });
 
-    {// Font
-        RB::CreateSamplerParams fontSamplerParams{};
-        fontSamplerParams.magFilter = VK_FILTER_LINEAR;
-        fontSamplerParams.minFilter = VK_FILTER_LINEAR;
-        fontSamplerParams.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-        fontSamplerParams.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-        fontSamplerParams.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-        fontSamplerParams.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-        fontSamplerParams.mipLodBias = 0.0f;
-        fontSamplerParams.compareOp = VK_COMPARE_OP_NEVER;
-        fontSamplerParams.minLod = 0.0f;
-        fontSamplerParams.maxLod = 1.0f;
-        fontSamplerParams.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK;
-
-        auto const fontSampler = RB::CreateSampler(
-            device->GetVkDevice(),
-            fontSamplerParams
-        );
-        MFA_ASSERT(fontSampler != nullptr);
-        _fontPipeline = std::make_shared<TextOverlayPipeline>(_displayRenderPass, fontSampler);
-        AddFont(
-            "JetBrainsMono",
-            Path::Instance()->Get("fonts/JetBrains-Mono/JetBrainsMono-Bold.ttf").c_str()
-        );
-        AddFont(
-            "PublicSans",
-            Path::Instance()->Get("fonts/PublicSans/PublicSans-Bold.ttf").c_str()
-        );
-    }
+    InitFontPipeline();
 
     {// Solid fill
         auto const solidFillPipeline = std::make_shared<SolidFillPipeline>(_displayRenderPass);
@@ -177,11 +150,19 @@ void WebViewApp::OnSDL_Event(SDL_Event* event)
         }
         else if (event->key.keysym.sym == SDLK_DOWN)
         {
-            SetSelectedButton(_selectedButtonIdx + 1);
+            SetSelectedElement(_selectedElementIndex + 1);
         }
         else if (event->key.keysym.sym == SDLK_UP)
         {
-            SetSelectedButton(_selectedButtonIdx - 1);
+            SetSelectedElement(_selectedElementIndex - 1);
+        }
+        else if (event->key.keysym.sym == SDLK_RIGHT)
+        {
+            ModifySelectedElement(+1);
+        }
+        else if (event->key.keysym.sym == SDLK_LEFT)
+        {
+            ModifySelectedElement(-1);
         }
     }
 }
@@ -241,44 +222,82 @@ void WebViewApp::InstantiateWebViewContainer()
 
 void WebViewApp::QueryButtons()
 {
-    _buttons.clear();
-    _buttons.emplace_back(_webViewContainer->GetElementById("new-game"));
-    _buttons.emplace_back(_webViewContainer->GetElementById("continue"));
-    _buttons.emplace_back(_webViewContainer->GetElementById("settings"));
-    _buttons.emplace_back(_webViewContainer->GetElementById("exit"));
+    _elements.clear();
+    _elementsType.clear();
+    _elements.emplace_back(_webViewContainer->GetElementById("new-game"));
+    _elementsType.emplace_back(ElementType::Button);
+    _elements.emplace_back(_webViewContainer->GetElementById("continue"));
+    _elementsType.emplace_back(ElementType::Button);
+    _elements.emplace_back(_webViewContainer->GetElementById("settings"));
+    _elementsType.emplace_back(ElementType::Button);
+    _elements.emplace_back(_webViewContainer->GetElementById("exit"));
+    _elementsType.emplace_back(ElementType::Button);
+    _elements.emplace_back(_webViewContainer->GetElementById("slider"));
+    _elementsType.emplace_back(ElementType::Slider);
+    _elements.emplace_back(_webViewContainer->GetElementById("checkbox"));
+    _elementsType.emplace_back(ElementType::Checkbox);
 
-    SetSelectedButton(0);
+    SetSelectedElement(0);
 }
 
 //=============================================================
 
-void WebViewApp::SetSelectedButton(int const idx)
+void WebViewApp::SetSelectedElement(int const idx)
 {
-    static constexpr char const * SelectedKeyword = "selected";
-    static const size_t SelectedKeywordSize = strlen(SelectedKeyword);
-    _selectedButtonIdx = (idx + _buttons.size()) % _buttons.size();
-    for (int i = 0; i < _buttons.size(); ++i)
+    _selectedElementIndex = (idx + _elements.size()) % _elements.size();
+
+    for (int i = 0; i < _elements.size(); ++i)
     {
-        auto const & button = _buttons[i];
-        std::string classAttr = button->get_attr("class");
-        if (i == _selectedButtonIdx)
+        _webViewContainer->RemoveClass(_elements[i], "selected");
+        _webViewContainer->AddClass(_elements[i], "unselected");
+    }
+
+    if (_selectedElementIndex >= 0)
+    {
+        _webViewContainer->RemoveClass(_elements[_selectedElementIndex], "unselected");
+        _webViewContainer->AddClass(_elements[_selectedElementIndex], "selected");
+    }
+}
+
+//=============================================================
+
+void WebViewApp::ModifySelectedElement(int value)
+{
+    if (_selectedElementIndex < 0 || _selectedElementIndex >= _elements.size())
+    {
+        return;   
+    }
+    auto const selectedElement = _elements[_selectedElementIndex];
+    auto const selectedElementType = _elementsType[_selectedElementIndex];
+    if (selectedElementType == ElementType::Slider)
+    {
+        auto const sliderValue = _webViewContainer->GetElementById("slider-value", selectedElement);
+        if (sliderValue != nullptr)
         {
-            if (classAttr.ends_with(" ") == false)
+            std::string sliderStyle = sliderValue->get_attr("style", "");
+            std::regex regex_pattern(R"(width:\s*(\d+)\%)");
+            std::smatch match;
+            int progress = 0;
+            if (std::regex_search(sliderStyle, match, regex_pattern))
             {
-                classAttr += " ";
+                std::string matchString = match[1].str();
+                progress = std::stoi(match[1].str());
+                progress = std::clamp(progress + value, 0, 100);
+                sliderStyle = std::regex_replace(sliderStyle, regex_pattern, "width: " + std::to_string(progress) + "%");
             }
-            classAttr = classAttr.append(SelectedKeyword);
-        }
-        else
-        {
-            auto const findResult = classAttr.find(SelectedKeyword);
-            if (findResult != std::string::npos)
+            else
             {
-                classAttr.erase(findResult, SelectedKeywordSize);
+                sliderStyle = "width:0%";
             }
+            // TODO: Update the text
+            sliderValue->set_attr("style", sliderStyle.c_str());
+            auto element = (litehtml::el_text *)sliderValue->children().begin()->get();
+            std::string text{};
+            MFA_STRING(text, "%d%%", progress);
+            element->set_text(text.c_str());
+
+            _webViewContainer->InvalidateStyles(sliderValue);
         }
-        button->set_attr("class", classAttr.c_str());
-        _webViewContainer->InvalidateStyles(button);
     }
 }
 
@@ -286,6 +305,26 @@ void WebViewApp::SetSelectedButton(int const idx)
 
 void WebViewApp::InitFontPipeline()
 {
+    auto *device = LogicalDevice::Instance;
+    // Font
+    RB::CreateSamplerParams fontSamplerParams{};
+    fontSamplerParams.magFilter = VK_FILTER_LINEAR;
+    fontSamplerParams.minFilter = VK_FILTER_LINEAR;
+    fontSamplerParams.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+    fontSamplerParams.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    fontSamplerParams.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    fontSamplerParams.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    fontSamplerParams.mipLodBias = 0.0f;
+    fontSamplerParams.compareOp = VK_COMPARE_OP_NEVER;
+    fontSamplerParams.minLod = 0.0f;
+    fontSamplerParams.maxLod = 1.0f;
+    fontSamplerParams.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK;
+
+    auto const fontSampler = RB::CreateSampler(device->GetVkDevice(), fontSamplerParams);
+    MFA_ASSERT(fontSampler != nullptr);
+    _fontPipeline = std::make_shared<TextOverlayPipeline>(_displayRenderPass, fontSampler);
+    AddFont("JetBrainsMono", Path::Instance()->Get("fonts/JetBrains-Mono/JetBrainsMono-Bold.ttf").c_str());
+    AddFont("PublicSans", Path::Instance()->Get("fonts/PublicSans/PublicSans-Bold.ttf").c_str());
 }
 
 //=============================================================

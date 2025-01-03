@@ -26,7 +26,9 @@ private:
 
     void QueryButtons();
 
-	void SetSelectedButton(int idx);
+	void SetSelectedElement(int idx);
+
+    void ModifySelectedElement(int value);
 
     void InitFontPipeline();
 
@@ -49,8 +51,15 @@ private:
     std::shared_ptr<MFA::ImageRenderer> _imageRenderer;
     std::shared_ptr<MFA::TextOverlayPipeline> _fontPipeline;
 
-	std::vector<litehtml::element::ptr> _buttons{};
-	int _selectedButtonIdx = 0;
+	std::vector<litehtml::element::ptr> _elements{};
+    enum class ElementType
+    {
+        Button,
+        Slider,
+        Checkbox
+    };
+    std::vector<ElementType> _elementsType{};
+	int _selectedElementIndex = 0;
 
     std::unordered_map<std::string, std::shared_ptr<MFA::Blob>> _blobMap;
     std::unordered_map<std::string, std::shared_ptr<MFA::CustomFontRenderer>> _fontMap{};
