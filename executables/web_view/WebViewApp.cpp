@@ -224,18 +224,54 @@ void WebViewApp::QueryButtons()
 {
     _elements.clear();
     _elementsType.clear();
-    _elements.emplace_back(_webViewContainer->GetElementById("new-game"));
-    _elementsType.emplace_back(ElementType::Button);
-    _elements.emplace_back(_webViewContainer->GetElementById("continue"));
-    _elementsType.emplace_back(ElementType::Button);
-    _elements.emplace_back(_webViewContainer->GetElementById("settings"));
-    _elementsType.emplace_back(ElementType::Button);
-    _elements.emplace_back(_webViewContainer->GetElementById("exit"));
-    _elementsType.emplace_back(ElementType::Button);
-    _elements.emplace_back(_webViewContainer->GetElementById("slider"));
-    _elementsType.emplace_back(ElementType::Slider);
-    _elements.emplace_back(_webViewContainer->GetElementById("checkbox"));
-    _elementsType.emplace_back(ElementType::Checkbox);
+    {
+        auto element = _webViewContainer->GetElementById("new-game");
+        if (element != nullptr)
+        {
+            _elements.emplace_back(element);
+            _elementsType.emplace_back(ElementType::Button);
+        }
+    }
+    {
+        auto element = _webViewContainer->GetElementById("continue");
+        if (element != nullptr)
+        {
+            _elements.emplace_back(element);
+            _elementsType.emplace_back(ElementType::Button);
+        }
+    }
+    {
+        auto element = _webViewContainer->GetElementById("settings");
+        if (element != nullptr)
+        {
+            _elements.emplace_back(element);
+            _elementsType.emplace_back(ElementType::Button);
+        }
+    }
+    {
+        auto element = _webViewContainer->GetElementById("exit");
+        if (element != nullptr)
+        {
+            _elements.emplace_back(element);
+            _elementsType.emplace_back(ElementType::Button);
+        }
+    }
+    {
+        auto element = _webViewContainer->GetElementById("slider");
+        if (element != nullptr)
+        {
+            _elements.emplace_back(element);
+            _elementsType.emplace_back(ElementType::Slider);
+        }
+    }
+    {
+        auto element = _webViewContainer->GetElementById("checkbox");
+        if (element != nullptr)
+        {
+            _elements.emplace_back(element);
+            _elementsType.emplace_back(ElementType::Checkbox);
+        }
+    }
 
     SetSelectedElement(0);
 }
