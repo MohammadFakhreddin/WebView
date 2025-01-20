@@ -3,6 +3,8 @@
 #include "BufferTracker.hpp"
 #include "pipeline/ImagePipeline.hpp"
 
+#include <optional>
+
 namespace MFA
 {
     class ImageRenderer
