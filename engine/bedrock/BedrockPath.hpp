@@ -3,6 +3,7 @@
 #include <filesystem>
 #include <memory>
 #include <string>
+#include <cstring>
 
 //https://stackoverflow.com/questions/4815423/how-do-i-set-the-working-directory-to-the-solution-directory
 namespace MFA
