@@ -56,10 +56,7 @@ jobs:
           choco install ninja --yes
 
       - name: Configure CMake
-        run: |
-          cmake -B build -S . ^
-            -DCMAKE_BUILD_TYPE=Release ^
-            -G Ninja
+        run: cmake -B build -S . -DCMAKE_BUILD_TYPE=Release -G Ninja
 
       - name: Build
         run: cmake --build build
@@ -69,27 +66,31 @@ jobs:
           cd build
           ctest --output-on-failure || exit 0
 
-  build-macos:
-    runs-on: macos-latest
+build-macos:
+  runs-on: macos-latest
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+  steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
 
-      - name: Install system dependencies
-        run: |
-          brew install cmake ninja
+    - name: Install system dependencies
+      run: |
+        brew install cmake ninja llvm
+        echo "LLVM installed at: $(brew --prefix llvm)"
 
-      - name: Configure CMake
-        run: |
-          cmake -B build -S . \
-            -DCMAKE_BUILD_TYPE=Release \
-            -G Ninja
+    - name: Configure CMake
+      run: |
+        export PATH="$(brew --prefix llvm)/bin:$PATH"
+        export CC=clang
+        export CXX=clang++
+        cmake -B build -S . \
+          -DCMAKE_BUILD_TYPE=Release \
+          -G Ninja
 
-      - name: Build
-        run: cmake --build build
+    - name: Build
+      run: cmake --build build
 
-      - name: Run tests (if any)
-        run: |
-          cd build
-          ctest --output-on-failure || true
+    - name: Run tests
+      run: |
+        cd build
+        ctest --output-on-failure || true
