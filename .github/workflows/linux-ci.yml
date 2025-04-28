@@ -58,11 +58,7 @@ jobs:
           choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System' --yes
 
       - name: Configure CMake (using Visual Studio generator)
-        run: |
-          cmake -B build -S . `
-            -DCMAKE_BUILD_TYPE=Release `
-            -G "Visual Studio 17 2022" `  # Uses MSVC compiler
-            -A x64                       # 64-bit architecture
+        run: cmake -B build -S . -DCMAKE_BUILD_TYPE=Release -G "Visual Studio 17 2022"
 
       - name: Build with MSBuild (instead of Ninja)
         run: |
