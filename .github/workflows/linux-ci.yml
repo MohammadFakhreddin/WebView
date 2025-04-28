@@ -50,21 +50,23 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Install system dependencies
+      - name: Set up MSVC (Visual Studio 2022)
+        uses: microsoft/setup-msbuild@v1  # Sets up MSBuild and MSVC tools
+
+      - name: Install CMake (if not already in PATH)
         run: |
           choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System' --yes
-          choco install ninja --yes
-          choco install mingw --params "/threads:win32 /exception:seh" --yes
 
-      - name: Set up MinGW environment
+      - name: Configure CMake (using Visual Studio generator)
         run: |
-          $mingwPath = "C:\ProgramData\chocolatey\lib\mingw\tools\install\mingw64\bin"
-          echo "::add-path::$mingwPath"
-          echo "::set-env name=CC::$mingwPath\gcc.exe"
-          echo "::set-env name=CXX::$mingwPath\g++.exe"
+          cmake -B build -S . `
+            -DCMAKE_BUILD_TYPE=Release `
+            -G "Visual Studio 17 2022" `  # Uses MSVC compiler
+            -A x64                       # 64-bit architecture
 
-      - name: Build
-        run: cmake --build build
+      - name: Build with MSBuild (instead of Ninja)
+        run: |
+          cmake --build build --config Release
 
       - name: Run tests (if any)
         run: |
