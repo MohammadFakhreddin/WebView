@@ -17,7 +17,17 @@ jobs:
           cmake \
           g++ \
           ninja-build \
-          libvulkan-dev \
+          libx11-dev \
+          libx11-xcb-dev \
+          libxcb1-dev \
+          libxcomposite-dev \
+          libxcursor-dev \
+          libxdamage-dev \
+          libxext-dev \
+          libxi-dev \
+          libxrandr-dev \
+          libxss-dev \
+          libxtst-dev
 
     - name: Free up disk space
       run: |
