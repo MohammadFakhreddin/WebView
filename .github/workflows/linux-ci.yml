@@ -54,9 +54,14 @@ jobs:
         run: |
           choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System' --yes
           choco install ninja --yes
+          choco install mingw --params "/threads:win32 /exception:seh" --yes
 
-      - name: Configure CMake
-        run: cmake -B build -S . -DCMAKE_BUILD_TYPE=Release -G Ninja -DCMAKE_C_FLAGS="-Wno-error=typedef-redefinition" -DCMAKE_CXX_FLAGS="-Wno-error=typedef-redefinition"
+      - name: Set up MinGW environment
+        run: |
+          $mingwPath = "C:\ProgramData\chocolatey\lib\mingw\tools\install\mingw64\bin"
+          echo "::add-path::$mingwPath"
+          echo "::set-env name=CC::$mingwPath\gcc.exe"
+          echo "::set-env name=CXX::$mingwPath\g++.exe"
 
       - name: Build
         run: cmake --build build
