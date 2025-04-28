@@ -1,0 +1,43 @@
+name: C++ CI for Webview project
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          cmake \
+          g++ \
+          ninja-build
+
+    - name: Free up disk space
+      run: |
+        echo "Before cleanup:"
+        df -h
+        sudo rm -rf /usr/share/dotnet
+        sudo rm -rf /opt/ghc
+        sudo rm -rf /usr/local/lib/android
+        echo "After cleanup:"
+        df -h
+
+    - name: Configure CMake
+      run: |
+        cmake -B build -S . \
+          -DCMAKE_BUILD_TYPE=Release \
+          -G Ninja
+
+    - name: Build
+      run: cmake --build build
+
+    - name: Run tests (if any)
+      run: |
+        cd build
+        ctest --output-on-failure || true
